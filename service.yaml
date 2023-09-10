@@ -1,0 +1,9 @@
+name: Myservice
+team: MyTeam
+cloud: gcp
+account: project
+region: us-west2
+env: development
+components:
+  - Storage:
+      name: MTestRandomStorage
