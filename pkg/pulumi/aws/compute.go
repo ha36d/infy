@@ -1,24 +1,31 @@
 package awspulumi
 
 import (
-	"strconv"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
 
 	model "github.com/ha36d/infy/pkg/pulumi/model"
+	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws"
 	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/ec2"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
 func (Holder) Compute(metadata *model.Metadata, args map[string]any, ctx *pulumi.Context) {
-	// here we create the server
-	zone := []string{
-		"a",
-		"b",
-		"c",
+	available, err := aws.GetAvailabilityZones(ctx, &aws.GetAvailabilityZonesArgs{
+		State: pulumi.StringRef("available"),
+		Filters: []aws.GetAvailabilityZonesFilter{
+			{
+				Name: "region-name",
+				Values: []string{
+					metadata.Region,
+				},
+			},
+		},
+	}, nil)
+	if err != nil {
+		log.Println(err)
 	}
-	atoiName, _ := strconv.Atoi(args["name"].(string))
 	image, err := ec2.LookupAmi(ctx, &ec2.LookupAmiArgs{
 		MostRecent: pulumi.BoolRef(true),
 		Filters: []ec2.GetAmiFilter{
@@ -58,7 +65,7 @@ func (Holder) Compute(metadata *model.Metadata, args map[string]any, ctx *pulumi
 				},
 			},
 		},
-		AvailabilityZone: pulumi.String(metadata.Region + zone[atoiName%3]),
+		AvailabilityZone: pulumi.String(available.Names[0]),
 	})
 	if err != nil {
 		log.Println(err)
