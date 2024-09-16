@@ -8,7 +8,7 @@ import (
 
 func (Holder) Compartment(metadata *model.Metadata, ctx *pulumi.Context) error {
 
-	_, err := identity.NewCompartment(ctx, "exampleCompartment", &identity.CompartmentArgs{
+	_, err := identity.NewCompartment(ctx, metadata.Name, &identity.CompartmentArgs{
 		CompartmentId: pulumi.String(metadata.Account), // Root or parent compartment OCID
 		Description:   pulumi.String(metadata.Name),
 		Name:          pulumi.String(metadata.Name),
