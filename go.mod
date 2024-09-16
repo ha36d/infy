@@ -10,6 +10,8 @@ require (
 	github.com/pulumi/pulumi-aws/sdk/v6 v6.49.0
 	github.com/pulumi/pulumi-azure/sdk/v5 v5.87.0
 	github.com/pulumi/pulumi-gcp/sdk/v7 v7.35.0
+	github.com/pulumi/pulumi-oci/sdk v1.41.0
+	github.com/pulumi/pulumi-oci/sdk/v2 v2.9.0
 	github.com/pulumi/pulumi/sdk/v3 v3.129.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.1

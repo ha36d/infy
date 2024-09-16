@@ -67,19 +67,19 @@ func createOrSelectObjectStack(ctx context.Context, metadata *model.Metadata, co
 			for key, value := range component {
 				log.Printf("preparing %s function\n", key)
 				values := value.(map[string]any)
-				if metadata.Cloud == GCP {
-					f := reflect.ValueOf(gcppulumi.Holder{}).
-						MethodByName(strcase.ToCamel(key)).Interface().(func(*model.Metadata, map[string]any, *pulumi.Context))
-					f(metadata, values, ctx)
-				} else if metadata.Cloud == AWS {
-					f := reflect.ValueOf(awspulumi.Holder{}).
-						MethodByName(strcase.ToCamel(key)).Interface().(func(*model.Metadata, map[string]any, *pulumi.Context))
-					f(metadata, values, ctx)
-				} else if metadata.Cloud == AZURE {
-					f := reflect.ValueOf(azurepulumi.Holder{}).
-						MethodByName(strcase.ToCamel(key)).Interface().(func(*model.Metadata, map[string]any, *pulumi.Context))
-					f(metadata, values, ctx)
+				var result []reflect.Value
+				switch metadata.Cloud {
+				case GCP:
+					result = reflect.ValueOf(gcppulumi.Holder{}).
+						MethodByName(strcase.ToCamel(key)).Call([]reflect.Value{reflect.ValueOf(metadata), reflect.ValueOf(values), reflect.ValueOf(ctx)})
+				case AWS:
+					result = reflect.ValueOf(awspulumi.Holder{}).
+						MethodByName(strcase.ToCamel(key)).Call([]reflect.Value{reflect.ValueOf(metadata), reflect.ValueOf(values), reflect.ValueOf(ctx)})
+				case AZURE:
+					result = reflect.ValueOf(azurepulumi.Holder{}).
+						MethodByName(strcase.ToCamel(key)).Call([]reflect.Value{reflect.ValueOf(metadata), reflect.ValueOf(values), reflect.ValueOf(ctx)})
 				}
+				log.Println(result[0].Interface())
 			}
 		}
 		return nil

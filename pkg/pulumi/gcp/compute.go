@@ -1,7 +1,6 @@
 package gcppulumi
 
 import (
-	"log"
 	"strings"
 
 	model "github.com/ha36d/infy/pkg/pulumi/model"
@@ -9,11 +8,11 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
-func (Holder) Compute(metadata *model.Metadata, args map[string]any, ctx *pulumi.Context) {
+func (Holder) Compute(metadata *model.Metadata, args map[string]any, ctx *pulumi.Context) error {
 
 	available, err := compute.GetZones(ctx, &compute.GetZonesArgs{Status: pulumi.StringRef("UP")})
 	if err != nil {
-		log.Println(err)
+		return err
 	}
 
 	_, err = compute.NewInstance(ctx, strings.ToLower(args["name"].(string)), &compute.InstanceArgs{
@@ -46,6 +45,7 @@ func (Holder) Compute(metadata *model.Metadata, args map[string]any, ctx *pulumi
 		},
 	})
 	if err != nil {
-		log.Println(err)
+		return err
 	}
+	return nil
 }

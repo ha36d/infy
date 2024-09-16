@@ -10,10 +10,9 @@ import (
 	"github.com/pulumi/pulumi-azure/sdk/v5/go/azure/network"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi/config"
-	log "github.com/sirupsen/logrus"
 )
 
-func (Holder) Compute(metadata *model.Metadata, args map[string]any, ctx *pulumi.Context) {
+func (Holder) Compute(metadata *model.Metadata, args map[string]any, ctx *pulumi.Context) error {
 	// here we create the server
 	cfg := config.New(ctx, "")
 	prefix := "tfvmex"
@@ -25,7 +24,7 @@ func (Holder) Compute(metadata *model.Metadata, args map[string]any, ctx *pulumi
 		Name: metadata.Name,
 	}, nil)
 	if err != nil {
-		log.Println(err)
+		return err
 	}
 	net, err := network.NewVirtualNetwork(ctx, "net", &network.VirtualNetworkArgs{
 		Name: pulumi.String(fmt.Sprintf("%v-network", prefix)),
@@ -36,7 +35,7 @@ func (Holder) Compute(metadata *model.Metadata, args map[string]any, ctx *pulumi
 		ResourceGroupName: pulumi.String(rg.Name),
 	})
 	if err != nil {
-		log.Println(err)
+		return err
 	}
 	subnet, err := network.NewSubnet(ctx, "subnet", &network.SubnetArgs{
 		Name:               pulumi.String("subnet"),
@@ -47,7 +46,7 @@ func (Holder) Compute(metadata *model.Metadata, args map[string]any, ctx *pulumi
 		},
 	})
 	if err != nil {
-		log.Println(err)
+		return err
 	}
 	nic, err := network.NewNetworkInterface(ctx, "nic", &network.NetworkInterfaceArgs{
 		Name:              pulumi.String(fmt.Sprintf("%v-nic", prefix)),
@@ -62,7 +61,7 @@ func (Holder) Compute(metadata *model.Metadata, args map[string]any, ctx *pulumi
 		},
 	})
 	if err != nil {
-		log.Println(err)
+		return err
 	}
 	_, err = compute.NewVirtualMachine(ctx, "main", &compute.VirtualMachineArgs{
 		Name:              pulumi.String(args["name"].(string)),
@@ -100,6 +99,8 @@ func (Holder) Compute(metadata *model.Metadata, args map[string]any, ctx *pulumi
 		},
 	})
 	if err != nil {
-		log.Println(err)
+		return err
 	}
+
+	return nil
 }

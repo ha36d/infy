@@ -14,16 +14,19 @@ func TestHolder_Compute(t *testing.T) {
 		ctx      *pulumi.Context
 	}
 	tests := []struct {
-		name string
-		h    Holder
-		args args
+		name    string
+		h       Holder
+		args    args
+		wantErr bool
 	}{
 		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			h := Holder{}
-			h.Compute(tt.args.metadata, tt.args.args, tt.args.ctx)
+			if err := h.Compute(tt.args.metadata, tt.args.args, tt.args.ctx); (err != nil) != tt.wantErr {
+				t.Errorf("Holder.Compute() error = %v, wantErr %v", err, tt.wantErr)
+			}
 		})
 	}
 }

@@ -1,4 +1,4 @@
-package azurepulumi
+package ocipulumi
 
 import (
 	"testing"
