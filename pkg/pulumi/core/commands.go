@@ -126,12 +126,12 @@ func createOrSelectStack(ctx context.Context, metadata *model.Metadata, deployFu
 			log.Printf("Failed to install program plugins: %v\n", err)
 			os.Exit(1)
 		}
-		// set stack configuration specifying the AWS region to deploy
+		// set stack configuration specifying the GCP account to deploy
 		if err = s.SetConfig(ctx, "gcp:project", auto.ConfigValue{Value: metadata.Account}); err != nil {
 			log.Printf("Failed to set config: %v\n", err)
 			os.Exit(1)
 		}
-		// set stack configuration specifying the AWS region to deploy
+		// set stack configuration specifying the GCP region to deploy
 		if err = s.SetConfig(ctx, "gcp:region", auto.ConfigValue{Value: metadata.Region}); err != nil {
 			log.Printf("Failed to set config: %v\n", err)
 			os.Exit(1)
@@ -142,7 +142,7 @@ func createOrSelectStack(ctx context.Context, metadata *model.Metadata, deployFu
 			log.Printf("Failed to install program plugins: %v\n", err)
 			os.Exit(1)
 		}
-		// set stack configuration specifying the AWS region to deploy
+		// set stack configuration specifying the Azure region to deploy
 		if err = s.SetConfig(ctx, "azure:location", auto.ConfigValue{Value: metadata.Region}); err != nil {
 			log.Printf("Failed to set config: %v\n", err)
 			os.Exit(1)
@@ -151,6 +151,11 @@ func createOrSelectStack(ctx context.Context, metadata *model.Metadata, deployFu
 		log.Println("Installing the OCI plugin")
 		if err = w.InstallPlugin(ctx, "oci", "2.10.0"); err != nil {
 			log.Printf("Failed to install program plugins: %v\n", err)
+			os.Exit(1)
+		}
+		// set stack configuration specifying the OCI region to deploy
+		if err = s.SetConfig(ctx, "oci:region", auto.ConfigValue{Value: metadata.Region}); err != nil {
+			log.Printf("Failed to set config: %v\n", err)
 			os.Exit(1)
 		}
 	}
