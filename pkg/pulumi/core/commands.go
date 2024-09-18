@@ -23,6 +23,7 @@ import (
 const AZURE = "azure"
 const GCP = "gcp"
 const AWS = "aws"
+const OCI = "oci"
 
 func Preview(ctx context.Context, name string, team string, env string, cloud string,
 	account string, region string, components []map[string]any) {
@@ -103,11 +104,11 @@ func createOrSelectStack(ctx context.Context, metadata *model.Metadata, deployFu
 
 	w := s.Workspace()
 
-	if metadata.Cloud == AWS {
+	switch metadata.Cloud {
+	case AWS:
 		log.Println("Installing the AWS plugin")
-
 		// for inline source programs, we must manage plugins ourselves
-		err = w.InstallPlugin(ctx, "aws", "6.27.0")
+		err = w.InstallPlugin(ctx, "aws", "6.52.0")
 		if err != nil {
 			log.Printf("Failed to install program plugins: %v\n", err)
 			os.Exit(1)
@@ -119,8 +120,9 @@ func createOrSelectStack(ctx context.Context, metadata *model.Metadata, deployFu
 			log.Printf("Failed to set config: %v\n", err)
 			os.Exit(1)
 		}
-	} else if metadata.Cloud == GCP {
-		if err = w.InstallPlugin(ctx, "gcp", "v7.13.0"); err != nil {
+	case GCP:
+		log.Println("Installing the GCP plugin")
+		if err = w.InstallPlugin(ctx, "gcp", "7.35.0"); err != nil {
 			log.Printf("Failed to install program plugins: %v\n", err)
 			os.Exit(1)
 		}
@@ -134,9 +136,9 @@ func createOrSelectStack(ctx context.Context, metadata *model.Metadata, deployFu
 			log.Printf("Failed to set config: %v\n", err)
 			os.Exit(1)
 		}
-		log.Println("Installing the GCP plugin")
-	} else if metadata.Cloud == AZURE {
-		if err = w.InstallPlugin(ctx, "azure", "v5.73.0"); err != nil {
+	case AZURE:
+		log.Println("Installing the Azure plugin")
+		if err = w.InstallPlugin(ctx, "azure", "5.89.0"); err != nil {
 			log.Printf("Failed to install program plugins: %v\n", err)
 			os.Exit(1)
 		}
@@ -145,7 +147,12 @@ func createOrSelectStack(ctx context.Context, metadata *model.Metadata, deployFu
 			log.Printf("Failed to set config: %v\n", err)
 			os.Exit(1)
 		}
-		log.Println("Using Azure")
+	case OCI:
+		log.Println("Installing the OCI plugin")
+		if err = w.InstallPlugin(ctx, "oci", "2.10.0"); err != nil {
+			log.Printf("Failed to install program plugins: %v\n", err)
+			os.Exit(1)
+		}
 	}
 
 	log.Println("Successfully set config")
