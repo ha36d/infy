@@ -10,7 +10,7 @@ import (
 func (Holder) Compute(metadata *model.Metadata, args map[string]any, ctx *pulumi.Context) error {
 
 	compartments, err := identity.GetCompartments(ctx, &identity.GetCompartmentsArgs{
-		CompartmentId: metadata.Account, // Replace with your parent compartment OCID (root or any other)
+		CompartmentId: "",
 	})
 	if err != nil {
 		return err
@@ -19,7 +19,7 @@ func (Holder) Compute(metadata *model.Metadata, args map[string]any, ctx *pulumi
 	var compartment identity.GetCompartmentsCompartment
 	// Search for a specific compartment by name
 	for _, compartment = range compartments.Compartments {
-		if compartment.Name == args["name"] {
+		if compartment.Name == metadata.Account {
 			break
 		}
 	}

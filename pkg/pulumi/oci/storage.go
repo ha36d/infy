@@ -10,7 +10,7 @@ import (
 func (Holder) Storage(metadata *model.Metadata, args map[string]any, ctx *pulumi.Context) error {
 
 	compartments, err := identity.GetCompartments(ctx, &identity.GetCompartmentsArgs{
-		CompartmentId: metadata.Account, // Replace with your parent compartment OCID (root or any other)
+		CompartmentId: "",
 	})
 	if err != nil {
 		return err
@@ -19,18 +19,21 @@ func (Holder) Storage(metadata *model.Metadata, args map[string]any, ctx *pulumi
 	var compartment identity.GetCompartmentsCompartment
 	// Search for a specific compartment by name
 	for _, compartment = range compartments.Compartments {
-		if compartment.Name == args["name"] {
+		if compartment.Name == metadata.Account {
 			break
 		}
 	}
 
-	namespaceName := "<YOUR_OBJECT_STORAGE_NAMESPACE>"
+	namespace, err := objectstorage.GetNamespace(ctx, nil)
+	if err != nil {
+		return err
+	}
 
 	// Create an Object Storage bucket
 	_, err = objectstorage.NewBucket(ctx, args["name"].(string), &objectstorage.BucketArgs{
 		CompartmentId: pulumi.String(compartment.Id),
 		Name:          pulumi.String(args["name"].(string)),
-		Namespace:     pulumi.String(namespaceName),
+		Namespace:     pulumi.String(namespace.Namespace),
 		StorageTier:   pulumi.String("Standard"),
 	})
 	if err != nil {
