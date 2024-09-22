@@ -18,6 +18,7 @@ import (
 	azurepulumi "github.com/ha36d/infy/pkg/pulumi/azure"
 	gcppulumi "github.com/ha36d/infy/pkg/pulumi/gcp"
 	model "github.com/ha36d/infy/pkg/pulumi/model"
+	ocipulumi "github.com/ha36d/infy/pkg/pulumi/oci"
 )
 
 const AZURE = "azure"
@@ -27,7 +28,7 @@ const OCI = "oci"
 
 func Preview(ctx context.Context, name string, team string, env string, cloud string,
 	account string, region string, components []map[string]any) {
-	metadata := model.Metadata{Name: name, Team: team, Env: env, Cloud: cloud, Account: account, Region: region}
+	metadata := model.Metadata{Name: name, Team: team, Env: env, Cloud: cloud, Account: account, Region: region, Info: nil}
 
 	stack := createOrSelectObjectStack(ctx, &metadata, components)
 	// wire up our update to stream progress to stdout
@@ -63,24 +64,35 @@ func createOrSelectObjectStack(ctx context.Context, metadata *model.Metadata, co
 		if metadata.Cloud == AZURE {
 			log.Printf("preparing resourcegroup function\n")
 			azurepulumi.Holder{}.Resourcegroup(metadata, ctx)
+		} else if metadata.Cloud == OCI {
+			log.Printf("preparing compartment function\n")
+			ocipulumi.Holder{}.Compartment(metadata, ctx)
 		}
 		for _, component := range components {
 			for key, value := range component {
 				log.Printf("preparing %s function\n", key)
 				values := value.(map[string]any)
-				var result []reflect.Value
+				var err error
+
 				switch metadata.Cloud {
 				case GCP:
-					result = reflect.ValueOf(gcppulumi.Holder{}).
-						MethodByName(strcase.ToCamel(key)).Call([]reflect.Value{reflect.ValueOf(metadata), reflect.ValueOf(values), reflect.ValueOf(ctx)})
+					f := reflect.ValueOf(gcppulumi.Holder{}).
+						MethodByName(strcase.ToCamel(key)).Interface().(func(*model.Metadata, map[string]any, *pulumi.Context) error)
+					err = f(metadata, values, ctx)
 				case AWS:
-					result = reflect.ValueOf(awspulumi.Holder{}).
-						MethodByName(strcase.ToCamel(key)).Call([]reflect.Value{reflect.ValueOf(metadata), reflect.ValueOf(values), reflect.ValueOf(ctx)})
+					f := reflect.ValueOf(awspulumi.Holder{}).
+						MethodByName(strcase.ToCamel(key)).Interface().(func(*model.Metadata, map[string]any, *pulumi.Context) error)
+					err = f(metadata, values, ctx)
 				case AZURE:
-					result = reflect.ValueOf(azurepulumi.Holder{}).
-						MethodByName(strcase.ToCamel(key)).Call([]reflect.Value{reflect.ValueOf(metadata), reflect.ValueOf(values), reflect.ValueOf(ctx)})
+					f := reflect.ValueOf(azurepulumi.Holder{}).
+						MethodByName(strcase.ToCamel(key)).Interface().(func(*model.Metadata, map[string]any, *pulumi.Context) error)
+					err = f(metadata, values, ctx)
+				case OCI:
+					f := reflect.ValueOf(ocipulumi.Holder{}).
+						MethodByName(strcase.ToCamel(key)).Interface().(func(*model.Metadata, map[string]any, *pulumi.Context) error)
+					err = f(metadata, values, ctx)
 				}
-				log.Println(result[0].Interface())
+				log.Println(err)
 			}
 		}
 		return nil
@@ -151,11 +163,6 @@ func createOrSelectStack(ctx context.Context, metadata *model.Metadata, deployFu
 		log.Println("Installing the OCI plugin")
 		if err = w.InstallPlugin(ctx, "oci", "2.10.0"); err != nil {
 			log.Printf("Failed to install program plugins: %v\n", err)
-			os.Exit(1)
-		}
-		// set stack configuration specifying the OCI region to deploy
-		if err = s.SetConfig(ctx, "oci:region", auto.ConfigValue{Value: metadata.Region}); err != nil {
-			log.Printf("Failed to set config: %v\n", err)
 			os.Exit(1)
 		}
 	}

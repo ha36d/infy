@@ -1,6 +1,8 @@
 package ocipulumi
 
 import (
+	"fmt"
+
 	model "github.com/ha36d/infy/pkg/pulumi/model"
 	"github.com/pulumi/pulumi-oci/sdk/v2/go/oci/core"
 	"github.com/pulumi/pulumi-oci/sdk/v2/go/oci/identity"
@@ -9,47 +11,22 @@ import (
 
 func (Holder) Compute(metadata *model.Metadata, args map[string]any, ctx *pulumi.Context) error {
 
-	compartments, err := identity.GetCompartments(ctx, &identity.GetCompartmentsArgs{
-		CompartmentId: "",
+	availabilityDomains, err := identity.GetAvailabilityDomains(ctx, &identity.GetAvailabilityDomainsArgs{
+		CompartmentId: metadata.Account,
 	})
-	if err != nil {
-		return err
-	}
 
-	var compartment identity.GetCompartmentsCompartment
-	// Search for a specific compartment by name
-	for _, compartment = range compartments.Compartments {
-		if compartment.Name == metadata.Account {
-			break
-		}
-	}
-
-	vcn, err := core.NewVcn(ctx, args["name"].(string), &core.VcnArgs{
-		CidrBlock:     pulumi.String("10.0.0.0/16"),
-		CompartmentId: pulumi.String(compartment.Id),
-		DisplayName:   pulumi.String(args["name"].(string)),
-	})
-	if err != nil {
-		return err
-	}
-
-	subnet, err := core.NewSubnet(ctx, args["name"].(string), &core.SubnetArgs{
-		VcnId:         vcn.ID(),
-		CidrBlock:     pulumi.String("10.0.1.0/24"),
-		CompartmentId: pulumi.String(compartment.Id),
-		DisplayName:   pulumi.String(args["name"].(string)),
-	})
 	if err != nil {
 		return err
 	}
 
 	_, err = core.NewInstance(ctx, args["name"].(string), &core.InstanceArgs{
-		AvailabilityDomain: pulumi.String(metadata.Region),
-		CompartmentId:      pulumi.String(compartment.Id),
+		AvailabilityDomain: pulumi.String(availabilityDomains.AvailabilityDomains[0].Name),
+		CompartmentId:      compartment.CompartmentId,
 		DisplayName:        pulumi.String(args["name"].(string)),
 		Shape:              pulumi.String(args["type"].(string)),
 		CreateVnicDetails: &core.InstanceCreateVnicDetailsArgs{
-			SubnetId: subnet.ID(),
+			SubnetId:    subnet.ID(),
+			DisplayName: pulumi.String(args["name"].(string)),
 		},
 		SourceDetails: &core.InstanceSourceDetailsArgs{
 			SourceType:          pulumi.String("image"),
@@ -57,9 +34,10 @@ func (Holder) Compute(metadata *model.Metadata, args map[string]any, ctx *pulumi
 			BootVolumeSizeInGbs: pulumi.String(args["size"].(string)),
 		},
 	})
+
 	if err != nil {
+		fmt.Printf("TEST1")
 		return err
 	}
-
 	return nil
 }
