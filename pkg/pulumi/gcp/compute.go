@@ -1,8 +1,6 @@
 package gcppulumi
 
 import (
-	"log"
-	"strconv"
 	"strings"
 
 	model "github.com/ha36d/infy/pkg/pulumi/model"
@@ -10,16 +8,14 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
-func (Holder) Compute(metadata *model.Metadata, args map[string]any, ctx *pulumi.Context) {
-	// here we create the server
-	zone := []string{
-		"a",
-		"b",
-		"c",
-	}
-	atoiName, _ := strconv.Atoi(args["name"].(string))
+func (Holder) Compute(metadata *model.Metadata, args map[string]any, ctx *pulumi.Context) error {
 
-	_, err := compute.NewInstance(ctx, strings.ToLower(args["name"].(string)), &compute.InstanceArgs{
+	available, err := compute.GetZones(ctx, &compute.GetZonesArgs{Status: pulumi.StringRef("UP")})
+	if err != nil {
+		return err
+	}
+
+	_, err = compute.NewInstance(ctx, strings.ToLower(args["name"].(string)), &compute.InstanceArgs{
 		NetworkInterfaces: compute.InstanceNetworkInterfaceArray{
 			&compute.InstanceNetworkInterfaceArgs{
 				AccessConfigs: compute.InstanceNetworkInterfaceAccessConfigArray{
@@ -30,7 +26,7 @@ func (Holder) Compute(metadata *model.Metadata, args map[string]any, ctx *pulumi
 		},
 		Name:        pulumi.String(strings.ToLower(args["name"].(string))),
 		MachineType: pulumi.String(args["type"].(string)),
-		Zone:        pulumi.String(metadata.Region + "-" + zone[atoiName%3]),
+		Zone:        pulumi.String(available.Names[0]),
 		Labels: pulumi.StringMap{
 			"team":    pulumi.String(strings.ToLower(metadata.Team)),
 			"product": pulumi.String(strings.ToLower(metadata.Name)),
@@ -49,6 +45,7 @@ func (Holder) Compute(metadata *model.Metadata, args map[string]any, ctx *pulumi
 		},
 	})
 	if err != nil {
-		log.Println(err)
+		return err
 	}
+	return nil
 }

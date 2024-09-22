@@ -1,4 +1,4 @@
-package azurepulumi
+package ocipulumi
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
-func TestHolder_Storage(t *testing.T) {
+func TestHolder_Compute(t *testing.T) {
 	type args struct {
 		metadata *model.Metadata
 		args     map[string]any
@@ -24,8 +24,8 @@ func TestHolder_Storage(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			h := Holder{}
-			if err := h.Storage(tt.args.metadata, tt.args.args, tt.args.ctx); (err != nil) != tt.wantErr {
-				t.Errorf("Holder.Storage() error = %v, wantErr %v", err, tt.wantErr)
+			if err := h.Compute(tt.args.metadata, tt.args.args, tt.args.ctx); (err != nil) != tt.wantErr {
+				t.Errorf("Holder.Compute() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}

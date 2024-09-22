@@ -18,15 +18,17 @@ import (
 	azurepulumi "github.com/ha36d/infy/pkg/pulumi/azure"
 	gcppulumi "github.com/ha36d/infy/pkg/pulumi/gcp"
 	model "github.com/ha36d/infy/pkg/pulumi/model"
+	ocipulumi "github.com/ha36d/infy/pkg/pulumi/oci"
 )
 
 const AZURE = "azure"
 const GCP = "gcp"
 const AWS = "aws"
+const OCI = "oci"
 
 func Preview(ctx context.Context, name string, team string, env string, cloud string,
 	account string, region string, components []map[string]any) {
-	metadata := model.Metadata{Name: name, Team: team, Env: env, Cloud: cloud, Account: account, Region: region}
+	metadata := model.Metadata{Name: name, Team: team, Env: env, Cloud: cloud, Account: account, Region: region, Info: nil}
 
 	stack := createOrSelectObjectStack(ctx, &metadata, components)
 	// wire up our update to stream progress to stdout
@@ -62,24 +64,35 @@ func createOrSelectObjectStack(ctx context.Context, metadata *model.Metadata, co
 		if metadata.Cloud == AZURE {
 			log.Printf("preparing resourcegroup function\n")
 			azurepulumi.Holder{}.Resourcegroup(metadata, ctx)
+		} else if metadata.Cloud == OCI {
+			log.Printf("preparing compartment function\n")
+			ocipulumi.Holder{}.Compartment(metadata, ctx)
 		}
 		for _, component := range components {
 			for key, value := range component {
 				log.Printf("preparing %s function\n", key)
 				values := value.(map[string]any)
-				if metadata.Cloud == GCP {
+				var err error
+
+				switch metadata.Cloud {
+				case GCP:
 					f := reflect.ValueOf(gcppulumi.Holder{}).
-						MethodByName(strcase.ToCamel(key)).Interface().(func(*model.Metadata, map[string]any, *pulumi.Context))
-					f(metadata, values, ctx)
-				} else if metadata.Cloud == AWS {
+						MethodByName(strcase.ToCamel(key)).Interface().(func(*model.Metadata, map[string]any, *pulumi.Context) error)
+					err = f(metadata, values, ctx)
+				case AWS:
 					f := reflect.ValueOf(awspulumi.Holder{}).
-						MethodByName(strcase.ToCamel(key)).Interface().(func(*model.Metadata, map[string]any, *pulumi.Context))
-					f(metadata, values, ctx)
-				} else if metadata.Cloud == AZURE {
+						MethodByName(strcase.ToCamel(key)).Interface().(func(*model.Metadata, map[string]any, *pulumi.Context) error)
+					err = f(metadata, values, ctx)
+				case AZURE:
 					f := reflect.ValueOf(azurepulumi.Holder{}).
-						MethodByName(strcase.ToCamel(key)).Interface().(func(*model.Metadata, map[string]any, *pulumi.Context))
-					f(metadata, values, ctx)
+						MethodByName(strcase.ToCamel(key)).Interface().(func(*model.Metadata, map[string]any, *pulumi.Context) error)
+					err = f(metadata, values, ctx)
+				case OCI:
+					f := reflect.ValueOf(ocipulumi.Holder{}).
+						MethodByName(strcase.ToCamel(key)).Interface().(func(*model.Metadata, map[string]any, *pulumi.Context) error)
+					err = f(metadata, values, ctx)
 				}
+				log.Println(err)
 			}
 		}
 		return nil
@@ -103,11 +116,11 @@ func createOrSelectStack(ctx context.Context, metadata *model.Metadata, deployFu
 
 	w := s.Workspace()
 
-	if metadata.Cloud == AWS {
+	switch metadata.Cloud {
+	case AWS:
 		log.Println("Installing the AWS plugin")
-
 		// for inline source programs, we must manage plugins ourselves
-		err = w.InstallPlugin(ctx, "aws", "6.27.0")
+		err = w.InstallPlugin(ctx, "aws", "6.52.0")
 		if err != nil {
 			log.Printf("Failed to install program plugins: %v\n", err)
 			os.Exit(1)
@@ -119,33 +132,39 @@ func createOrSelectStack(ctx context.Context, metadata *model.Metadata, deployFu
 			log.Printf("Failed to set config: %v\n", err)
 			os.Exit(1)
 		}
-	} else if metadata.Cloud == GCP {
-		if err = w.InstallPlugin(ctx, "gcp", "v7.13.0"); err != nil {
+	case GCP:
+		log.Println("Installing the GCP plugin")
+		if err = w.InstallPlugin(ctx, "gcp", "7.35.0"); err != nil {
 			log.Printf("Failed to install program plugins: %v\n", err)
 			os.Exit(1)
 		}
-		// set stack configuration specifying the AWS region to deploy
+		// set stack configuration specifying the GCP account to deploy
 		if err = s.SetConfig(ctx, "gcp:project", auto.ConfigValue{Value: metadata.Account}); err != nil {
 			log.Printf("Failed to set config: %v\n", err)
 			os.Exit(1)
 		}
-		// set stack configuration specifying the AWS region to deploy
+		// set stack configuration specifying the GCP region to deploy
 		if err = s.SetConfig(ctx, "gcp:region", auto.ConfigValue{Value: metadata.Region}); err != nil {
 			log.Printf("Failed to set config: %v\n", err)
 			os.Exit(1)
 		}
-		log.Println("Installing the GCP plugin")
-	} else if metadata.Cloud == AZURE {
-		if err = w.InstallPlugin(ctx, "azure", "v5.73.0"); err != nil {
+	case AZURE:
+		log.Println("Installing the Azure plugin")
+		if err = w.InstallPlugin(ctx, "azure", "5.89.0"); err != nil {
 			log.Printf("Failed to install program plugins: %v\n", err)
 			os.Exit(1)
 		}
-		// set stack configuration specifying the AWS region to deploy
+		// set stack configuration specifying the Azure region to deploy
 		if err = s.SetConfig(ctx, "azure:location", auto.ConfigValue{Value: metadata.Region}); err != nil {
 			log.Printf("Failed to set config: %v\n", err)
 			os.Exit(1)
 		}
-		log.Println("Using Azure")
+	case OCI:
+		log.Println("Installing the OCI plugin")
+		if err = w.InstallPlugin(ctx, "oci", "2.10.0"); err != nil {
+			log.Printf("Failed to install program plugins: %v\n", err)
+			os.Exit(1)
+		}
 	}
 
 	log.Println("Successfully set config")

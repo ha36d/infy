@@ -7,4 +7,5 @@ type Metadata struct {
 	Cloud   string
 	Account string
 	Region  string
+	Info    map[string]string
 }
