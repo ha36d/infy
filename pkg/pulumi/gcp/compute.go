@@ -21,7 +21,7 @@ func (Holder) Compute(metadata *model.Metadata, args map[string]any, ctx *pulumi
 				AccessConfigs: compute.InstanceNetworkInterfaceAccessConfigArray{
 					nil,
 				},
-				Network: pulumi.String("default"),
+				Subnetwork: subnet.ID(),
 			},
 		},
 		Name:        pulumi.String(strings.ToLower(args["name"].(string))),
