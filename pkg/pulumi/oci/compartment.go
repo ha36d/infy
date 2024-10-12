@@ -10,10 +10,9 @@ import (
 var compartment *identity.Compartment
 var vcn *core.Vcn
 var subnet *core.Subnet
-var err error
 
 func (Holder) Compartment(metadata *model.Metadata, ctx *pulumi.Context) error {
-	compartment, err = identity.NewCompartment(ctx, metadata.Name, &identity.CompartmentArgs{
+	compartment, err := identity.NewCompartment(ctx, metadata.Name, &identity.CompartmentArgs{
 		CompartmentId: pulumi.String(metadata.Account),
 		Description:   pulumi.String(metadata.Name),
 		Name:          pulumi.String(metadata.Name),
