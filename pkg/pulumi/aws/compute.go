@@ -44,8 +44,9 @@ func (Holder) Compute(metadata *model.Metadata, args map[string]any, ctx *pulumi
 	if err != nil {
 		return err
 	}
-	_, err = ec2.NewInstance(ctx, "web", &ec2.InstanceArgs{
+	_, err = ec2.NewInstance(ctx, args["name"].(string), &ec2.InstanceArgs{
 		Ami:          pulumi.String(image.Id),
+		SubnetId:     privateSubnet.ID(),
 		InstanceType: pulumi.String(args["type"].(string)),
 		Tags: pulumi.StringMap{
 			"team":    pulumi.String(strings.ToLower(metadata.Team)),
