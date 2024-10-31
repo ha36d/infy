@@ -38,8 +38,9 @@ audit: test
 ## gentest: run all tests
 .PHONY: gentest
 gentest:
-	find . -name "*_test.go" -delete
 	go get -u github.com/cweill/gotests
+	find . -name "*_test.go" -delete
+	find . -name "*.go" | xargs -I{} ~/go/bin/gotests -all -w {}
 
 ## test: run all tests
 .PHONY: test
