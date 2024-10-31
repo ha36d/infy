@@ -1,7 +1,6 @@
 package azurepulumi
 
 import (
-	"fmt"
 	"strings"
 
 	model "github.com/ha36d/infy/pkg/pulumi/model"
@@ -9,16 +8,10 @@ import (
 	"github.com/pulumi/pulumi-azure/sdk/v5/go/azure/core"
 	"github.com/pulumi/pulumi-azure/sdk/v5/go/azure/network"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
-	"github.com/pulumi/pulumi/sdk/v3/go/pulumi/config"
 )
 
 func (Holder) Compute(metadata *model.Metadata, args map[string]any, ctx *pulumi.Context) error {
 	// here we create the server
-	cfg := config.New(ctx, "")
-	prefix := "tfvmex"
-	if param := cfg.Get("prefix"); param != "" {
-		prefix = param
-	}
 	os := strings.Split(args["image"].(string), "/")
 	rg, err := core.LookupResourceGroup(ctx, &core.LookupResourceGroupArgs{
 		Name: metadata.Name,
@@ -26,30 +19,8 @@ func (Holder) Compute(metadata *model.Metadata, args map[string]any, ctx *pulumi
 	if err != nil {
 		return err
 	}
-	net, err := network.NewVirtualNetwork(ctx, "net", &network.VirtualNetworkArgs{
-		Name: pulumi.String(fmt.Sprintf("%v-network", prefix)),
-		AddressSpaces: pulumi.StringArray{
-			pulumi.String("10.0.0.0/16"),
-		},
-		Location:          pulumi.String(rg.Location),
-		ResourceGroupName: pulumi.String(rg.Name),
-	})
-	if err != nil {
-		return err
-	}
-	subnet, err := network.NewSubnet(ctx, "subnet", &network.SubnetArgs{
-		Name:               pulumi.String("subnet"),
-		ResourceGroupName:  pulumi.String(rg.Name),
-		VirtualNetworkName: net.Name,
-		AddressPrefixes: pulumi.StringArray{
-			pulumi.String("10.0.2.0/24"),
-		},
-	})
-	if err != nil {
-		return err
-	}
 	nic, err := network.NewNetworkInterface(ctx, "nic", &network.NetworkInterfaceArgs{
-		Name:              pulumi.String(fmt.Sprintf("%v-nic", prefix)),
+		Name:              pulumi.String(args["name"].(string)),
 		Location:          pulumi.String(rg.Location),
 		ResourceGroupName: pulumi.String(rg.Name),
 		IpConfigurations: network.NetworkInterfaceIpConfigurationArray{
