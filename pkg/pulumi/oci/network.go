@@ -7,9 +7,10 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
-var compartment *identity.Compartment
+var vcn *core.Vcn
+var subnet *core.Subnet
 
-func (Holder) Compartment(metadata *model.Metadata, ctx *pulumi.Context) error {
+func (Holder) Network(metadata *model.Metadata, ctx *pulumi.Context) error {
 	compartment, err := identity.NewCompartment(ctx, metadata.Name, &identity.CompartmentArgs{
 		CompartmentId: pulumi.String(metadata.Account),
 		Description:   pulumi.String(metadata.Name),

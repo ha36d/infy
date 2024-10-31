@@ -10,6 +10,30 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
+func TestPreview(t *testing.T) {
+	type args struct {
+		ctx        context.Context
+		name       string
+		team       string
+		env        string
+		cloud      string
+		account    string
+		region     string
+		components []map[string]any
+	}
+	tests := []struct {
+		name string
+		args args
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			Preview(tt.args.ctx, tt.args.name, tt.args.team, tt.args.env, tt.args.cloud, tt.args.account, tt.args.region, tt.args.components)
+		})
+	}
+}
+
 func TestUp(t *testing.T) {
 	type args struct {
 		ctx        context.Context
