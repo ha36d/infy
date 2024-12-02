@@ -5,9 +5,9 @@ import (
 	"os"
 
 	log "github.com/sirupsen/logrus"
-
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/xeipuuv/gojsonschema"
 )
 
 var cfgFile string
@@ -15,13 +15,11 @@ var verbose bool
 var C config
 
 type config struct {
-	Components []map[string]any `mapstructure:"components"`
-	Name       string           `mapstructure:"name"`
-	Team       string           `mapstructure:"team"`
-	Env        string           `mapstructure:"env"`
-	Cloud      string           `mapstructure:"cloud"`
-	Account    string           `mapstructure:"account"`
-	Region     string           `mapstructure:"region"`
+	Components []map[string]any  `mapstructure:"components"`
+	Metadata   map[string]string `mapstructure:"metadata"`
+	Cloud      string            `mapstructure:"cloud"`
+	Account    string            `mapstructure:"account"`
+	Region     string            `mapstructure:"region"`
 }
 
 // rootCmd represents the base command when called without any subcommands
@@ -56,8 +54,7 @@ func initConfig() {
 		// Find home directory.
 		home, err := os.UserHomeDir()
 		cobra.CheckErr(err)
-
-		// Search config in working directory, and then home directory with name ".cobra-app" (without extension).
+		// Search config in working directory, and then home directory with name ".infy" (without extension).
 		viper.AddConfigPath(".")
 		viper.AddConfigPath(home)
 		viper.SetConfigType("yaml")
@@ -70,19 +67,39 @@ func initConfig() {
 		log.Println("No config file found! Counting on flags!")
 	}
 
+	// Load JSON schema from file
+	schemaFile, err := os.ReadFile("config_schema.json")
+	if err != nil {
+		log.Fatalf("Error reading schema file: %v", err)
+	}
+	schemaLoader := gojsonschema.NewStringLoader(string(schemaFile))
+	documentLoader := gojsonschema.NewGoLoader(viper.AllSettings())
+	result, err := gojsonschema.Validate(schemaLoader, documentLoader)
+	if err != nil {
+		log.Fatalf("Error validating config: %v", err)
+	}
+
+	if !result.Valid() {
+		log.Println("The configuration is not valid:")
+		for _, desc := range result.Errors() {
+			log.Printf("- %s\n", desc)
+		}
+		os.Exit(1)
+	}
+
+	// Unmarshal the validated configuration
+	if err := viper.Unmarshal(&C); err != nil {
+		log.Fatalf("Unable to decode into struct, %v", err)
+	}
+
 	verbose = viper.GetBool("verbose")
 	if verbose {
 		// If a config file is found, read it in.
 		fmt.Fprintln(os.Stderr, "Using config:", viper.ConfigFileUsed())
-
 		log.Println("--- Configuration ---")
 		for s, i := range viper.AllSettings() {
 			log.Printf("\t%s = %s\n", s, i)
 		}
 		log.Println("---")
-	}
-
-	if err := viper.Unmarshal(&C); err != nil {
-		log.Printf("unable to decode into struct, %v", err)
 	}
 }

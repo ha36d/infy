@@ -10,12 +10,12 @@ require (
 	github.com/pulumi/pulumi-aws/sdk/v6 v6.49.0
 	github.com/pulumi/pulumi-azure/sdk/v5 v5.87.0
 	github.com/pulumi/pulumi-gcp/sdk/v7 v7.35.0
-	github.com/pulumi/pulumi-oci/sdk v1.41.0
 	github.com/pulumi/pulumi-oci/sdk/v2 v2.9.0
 	github.com/pulumi/pulumi/sdk/v3 v3.129.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.19.0
+	github.com/xeipuuv/gojsonschema v1.2.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 
@@ -37,7 +37,6 @@ require (
 	github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e // indirect
 	github.com/cloudflare/circl v1.3.7 // indirect
 	github.com/containerd/console v1.0.4-0.20230313162750-1ae8d489ac81 // indirect
-	github.com/cweill/gotests v1.6.0 // indirect
 	github.com/cyphar/filepath-securejoin v0.2.4 // indirect
 	github.com/djherbis/times v1.5.0 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
@@ -97,6 +96,8 @@ require (
 	github.com/uber/jaeger-client-go v2.30.0+incompatible // indirect
 	github.com/uber/jaeger-lib v2.4.1+incompatible // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
+	github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f // indirect
+	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/zclconf/go-cty v1.13.2 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect

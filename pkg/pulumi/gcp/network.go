@@ -10,7 +10,7 @@ var subnet *compute.Subnetwork
 
 func (Holder) Requirements(metadata *model.Metadata, args map[string]any, ctx *pulumi.Context) error {
 
-	network, err := compute.NewNetwork(ctx, metadata.Name+"-network", &compute.NetworkArgs{
+	network, err := compute.NewNetwork(ctx, metadata.Meta["Name"]+"-network", &compute.NetworkArgs{
 		AutoCreateSubnetworks: pulumi.Bool(false),
 	})
 	if err != nil {
@@ -18,7 +18,7 @@ func (Holder) Requirements(metadata *model.Metadata, args map[string]any, ctx *p
 	}
 
 	// 2. Create a new subnet within the network
-	subnet, err := compute.NewSubnetwork(ctx, metadata.Name+"-subnet", &compute.SubnetworkArgs{
+	subnet, err := compute.NewSubnetwork(ctx, metadata.Meta["Name"]+"-subnet", &compute.SubnetworkArgs{
 		IpCidrRange: pulumi.String(""),
 		Region:      pulumi.String("us-central1"),
 		Network:     network.ID(),
@@ -27,7 +27,7 @@ func (Holder) Requirements(metadata *model.Metadata, args map[string]any, ctx *p
 		return err
 	}
 
-	firewall, err := compute.NewFirewall(ctx, metadata.Name+"-firewall", &compute.FirewallArgs{
+	firewall, err := compute.NewFirewall(ctx, metadata.Meta["Name"]+"-firewall", &compute.FirewallArgs{
 		Network: network.ID(),
 		Allows: compute.FirewallAllowArray{
 			&compute.FirewallAllowArgs{

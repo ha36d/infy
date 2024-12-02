@@ -25,7 +25,7 @@ func (Holder) Network(metadata *model.Metadata, args map[string]any, ctx *pulumi
 		return err
 	}
 	// VPC
-	vpc, err := ec2.NewVpc(ctx, metadata.Name+"-vpc", &ec2.VpcArgs{
+	vpc, err := ec2.NewVpc(ctx, metadata.Meta["Name"]+"-vpc", &ec2.VpcArgs{
 		CidrBlock:          pulumi.String("10.0.0.0/16"), // VPC CIDR block
 		EnableDnsSupport:   pulumi.Bool(true),
 		EnableDnsHostnames: pulumi.Bool(true),
@@ -38,7 +38,7 @@ func (Holder) Network(metadata *model.Metadata, args map[string]any, ctx *pulumi
 	}
 
 	// Internet Gateway for the VPC
-	igw, err := ec2.NewInternetGateway(ctx, metadata.Name+"-igw", &ec2.InternetGatewayArgs{
+	igw, err := ec2.NewInternetGateway(ctx, metadata.Meta["Name"]+"-igw", &ec2.InternetGatewayArgs{
 		VpcId: vpc.ID(),
 		Tags: pulumi.StringMap{
 			"Name": pulumi.String("my-igw"),
@@ -49,7 +49,7 @@ func (Holder) Network(metadata *model.Metadata, args map[string]any, ctx *pulumi
 	}
 
 	// Public Subnet
-	publicSubnet, err := ec2.NewSubnet(ctx, metadata.Name+"-public-subnet", &ec2.SubnetArgs{
+	publicSubnet, err := ec2.NewSubnet(ctx, metadata.Meta["Name"]+"-public-subnet", &ec2.SubnetArgs{
 		VpcId:               vpc.ID(),
 		CidrBlock:           pulumi.String("10.0.1.0/24"),
 		AvailabilityZone:    pulumi.String(available.Names[0]),
@@ -63,7 +63,7 @@ func (Holder) Network(metadata *model.Metadata, args map[string]any, ctx *pulumi
 	}
 
 	// Private Subnet
-	privateSubnet, err := ec2.NewSubnet(ctx, metadata.Name+"-private-subnet", &ec2.SubnetArgs{
+	privateSubnet, err := ec2.NewSubnet(ctx, metadata.Meta["Name"]+"-private-subnet", &ec2.SubnetArgs{
 		VpcId:            vpc.ID(),
 		CidrBlock:        pulumi.String("10.0.2.0/24"),
 		AvailabilityZone: pulumi.String(available.Names[0]),
@@ -76,7 +76,7 @@ func (Holder) Network(metadata *model.Metadata, args map[string]any, ctx *pulumi
 	}
 
 	// Route Table for the Public Subnet and associate it with the Internet Gateway
-	publicRouteTable, err := ec2.NewRouteTable(ctx, metadata.Name+"-public-route-table", &ec2.RouteTableArgs{
+	publicRouteTable, err := ec2.NewRouteTable(ctx, metadata.Meta["Name"]+"-public-route-table", &ec2.RouteTableArgs{
 		VpcId: vpc.ID(),
 		Routes: ec2.RouteTableRouteArray{
 			&ec2.RouteTableRouteArgs{
@@ -93,7 +93,7 @@ func (Holder) Network(metadata *model.Metadata, args map[string]any, ctx *pulumi
 	}
 
 	// Associate the public subnet with the public route table
-	_, err = ec2.NewRouteTableAssociation(ctx, metadata.Name+"-public-subnet-association", &ec2.RouteTableAssociationArgs{
+	_, err = ec2.NewRouteTableAssociation(ctx, metadata.Meta["Name"]+"-public-subnet-association", &ec2.RouteTableAssociationArgs{
 		SubnetId:     publicSubnet.ID(),
 		RouteTableId: publicRouteTable.ID(),
 	})
@@ -101,7 +101,7 @@ func (Holder) Network(metadata *model.Metadata, args map[string]any, ctx *pulumi
 		return err
 	}
 
-	securityGroup, err := ec2.NewSecurityGroup(ctx, metadata.Name+"-sg", &ec2.SecurityGroupArgs{
+	securityGroup, err := ec2.NewSecurityGroup(ctx, metadata.Meta["Name"]+"-sg", &ec2.SecurityGroupArgs{
 		VpcId: vpc.ID(),
 		Ingress: ec2.SecurityGroupIngressArray{
 			&ec2.SecurityGroupIngressArgs{

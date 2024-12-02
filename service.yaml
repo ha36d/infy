@@ -1,9 +1,14 @@
-name: Myservice
-team: MyTeam
+metadata:
+  name: Myservice
+  team: MyTeam
+  env: development
 cloud: gcp
 account: project
 region: us-west2
-env: development
 components:
+  - Network:
+    create: false
+    network: morning
+    subnet: mon
   - Storage:
       name: MTestRandomStorage

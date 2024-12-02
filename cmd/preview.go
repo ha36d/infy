@@ -14,7 +14,7 @@ var previewCmd = &cobra.Command{
 	Long:  `Preview the infrastructure from a yaml file`,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := context.Background()
-		corepulumi.Preview(ctx, C.Name, C.Team, C.Env, C.Cloud, C.Account, C.Region, C.Components)
+		corepulumi.Preview(ctx, C.Metadata, C.Cloud, C.Account, C.Region, C.Components)
 	},
 }
 

@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	model "github.com/ha36d/infy/pkg/pulumi/model"
+	"github.com/ha36d/infy/pkg/pulumi/utils"
 	"github.com/pulumi/pulumi-azure/sdk/v5/go/azure/compute"
 	"github.com/pulumi/pulumi-azure/sdk/v5/go/azure/core"
 	"github.com/pulumi/pulumi-azure/sdk/v5/go/azure/network"
@@ -14,7 +15,7 @@ func (Holder) Compute(metadata *model.Metadata, args map[string]any, ctx *pulumi
 	// here we create the server
 	os := strings.Split(args["image"].(string), "/")
 	rg, err := core.LookupResourceGroup(ctx, &core.LookupResourceGroupArgs{
-		Name: metadata.Name,
+		Name: metadata.Meta["Name"],
 	}, nil)
 	if err != nil {
 		return err
@@ -63,11 +64,7 @@ func (Holder) Compute(metadata *model.Metadata, args map[string]any, ctx *pulumi
 		OsProfileLinuxConfig: &compute.VirtualMachineOsProfileLinuxConfigArgs{
 			DisablePasswordAuthentication: pulumi.Bool(false),
 		},
-		Tags: pulumi.StringMap{
-			"team":    pulumi.String(strings.ToLower(metadata.Team)),
-			"product": pulumi.String(strings.ToLower(metadata.Name)),
-			"owner":   pulumi.String(strings.ToLower(metadata.Team)),
-		},
+		Tags: utils.StringMapLabels(metadata),
 	})
 	if err != nil {
 		return err

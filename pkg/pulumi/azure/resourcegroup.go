@@ -8,8 +8,8 @@ import (
 
 func (Holder) Resourcegroup(metadata *model.Metadata, ctx *pulumi.Context) error {
 	// here we create the bucket
-	_, err := core.NewResourceGroup(ctx, metadata.Name, &core.ResourceGroupArgs{
-		Name:     pulumi.String(metadata.Name),
+	_, err := core.NewResourceGroup(ctx, metadata.Meta["Name"], &core.ResourceGroupArgs{
+		Name:     pulumi.String(metadata.Meta["Name"]),
 		Location: pulumi.String(metadata.Region),
 	})
 	if err != nil {

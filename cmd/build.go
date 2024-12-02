@@ -14,7 +14,7 @@ var buildCmd = &cobra.Command{
 	Long:  `Build the infrastructure from a yaml file`,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := context.Background()
-		corepulumi.Up(ctx, C.Name, C.Team, C.Env, C.Cloud, C.Account, C.Region, C.Components)
+		corepulumi.Up(ctx, C.Metadata, C.Cloud, C.Account, C.Region, C.Components)
 	},
 }
 

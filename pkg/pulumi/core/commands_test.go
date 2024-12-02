@@ -13,9 +13,7 @@ import (
 func TestPreview(t *testing.T) {
 	type args struct {
 		ctx        context.Context
-		name       string
-		team       string
-		env        string
+		meta       map[string]string
 		cloud      string
 		account    string
 		region     string
@@ -29,7 +27,7 @@ func TestPreview(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			Preview(tt.args.ctx, tt.args.name, tt.args.team, tt.args.env, tt.args.cloud, tt.args.account, tt.args.region, tt.args.components)
+			Preview(tt.args.ctx, tt.args.meta, tt.args.cloud, tt.args.account, tt.args.region, tt.args.components)
 		})
 	}
 }
@@ -37,9 +35,7 @@ func TestPreview(t *testing.T) {
 func TestUp(t *testing.T) {
 	type args struct {
 		ctx        context.Context
-		name       string
-		team       string
-		env        string
+		meta       map[string]string
 		cloud      string
 		account    string
 		region     string
@@ -53,7 +49,7 @@ func TestUp(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			Up(tt.args.ctx, tt.args.name, tt.args.team, tt.args.env, tt.args.cloud, tt.args.account, tt.args.region, tt.args.components)
+			Up(tt.args.ctx, tt.args.meta, tt.args.cloud, tt.args.account, tt.args.region, tt.args.components)
 		})
 	}
 }

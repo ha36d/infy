@@ -26,9 +26,9 @@ const GCP = "gcp"
 const AWS = "aws"
 const OCI = "oci"
 
-func Preview(ctx context.Context, name string, team string, env string, cloud string,
+func Preview(ctx context.Context, meta map[string]string, cloud string,
 	account string, region string, components []map[string]any) {
-	metadata := model.Metadata{Name: name, Team: team, Env: env, Cloud: cloud, Account: account, Region: region, Info: nil}
+	metadata := model.Metadata{Meta: meta, Cloud: cloud, Account: account, Region: region}
 
 	stack := createOrSelectObjectStack(ctx, &metadata, components)
 	// wire up our update to stream progress to stdout
@@ -36,15 +36,15 @@ func Preview(ctx context.Context, name string, team string, env string, cloud st
 	stdoutStreamer := optpreview.ProgressStreams(os.Stdout)
 	_, err := stack.Preview(ctx, stdoutStreamer)
 	if err != nil {
-		log.Printf("Failed to preview %s stack: %v\n\n", metadata.Name, err)
+		log.Printf("Failed to preview %s stack: %v\n\n", metadata.Meta["Name"], err)
 		os.Exit(1)
 	}
-	log.Printf("%s stack preview succeeded!", metadata.Name)
+	log.Printf("%s stack preview succeeded!", metadata.Meta["Name"])
 }
 
-func Up(ctx context.Context, name string, team string, env string, cloud string,
+func Up(ctx context.Context, meta map[string]string, cloud string,
 	account string, region string, components []map[string]any) {
-	metadata := model.Metadata{Name: name, Team: team, Env: env, Cloud: cloud, Account: account, Region: region}
+	metadata := model.Metadata{Meta: meta, Cloud: cloud, Account: account, Region: region}
 
 	stack := createOrSelectObjectStack(ctx, &metadata, components)
 	// wire up our update to stream progress to stdout
@@ -52,10 +52,10 @@ func Up(ctx context.Context, name string, team string, env string, cloud string,
 	stdoutStreamer := optup.ProgressStreams(os.Stdout)
 	_, err := stack.Up(ctx, stdoutStreamer)
 	if err != nil {
-		log.Printf("Failed to update %s stack: %v\n\n", metadata.Name, err)
+		log.Printf("Failed to update %s stack: %v\n\n", metadata.Meta["Name"], err)
 		os.Exit(1)
 	}
-	log.Printf("%s stack update succeeded!", metadata.Name)
+	log.Printf("%s stack update succeeded!", metadata.Meta["Name"])
 }
 
 // this function gets our object stack ready for update/destroy
@@ -103,10 +103,10 @@ func createOrSelectObjectStack(ctx context.Context, metadata *model.Metadata, co
 // this function gets our stack ready for update/destroy by prepping the workspace, init/selecting the stack
 // and doing a refresh to make sure state and cloud resources are in sync
 func createOrSelectStack(ctx context.Context, metadata *model.Metadata, deployFunc pulumi.RunFunc) auto.Stack {
-	stackName := fmt.Sprintf("%s-%s-%s", metadata.Team, metadata.Name, metadata.Env)
+	stackName := fmt.Sprintf("%s-%s-%s", metadata.Meta["Team"], metadata.Meta["Name"], metadata.Meta["Env"])
 	// create or select a stack with an inline Pulumi program
 
-	s, err := auto.UpsertStackInlineSource(ctx, stackName, metadata.Name, deployFunc)
+	s, err := auto.UpsertStackInlineSource(ctx, stackName, metadata.Meta["Team"], deployFunc)
 	if err != nil {
 		log.Printf("Failed to create or select stack: %v\n", err)
 		os.Exit(1)
