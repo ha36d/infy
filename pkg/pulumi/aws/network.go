@@ -7,8 +7,6 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
-var privateSubnet *ec2.Subnet
-
 func (Holder) Network(metadata *model.Metadata, args map[string]any, ctx *pulumi.Context) error {
 	available, err := aws.GetAvailabilityZones(ctx, &aws.GetAvailabilityZonesArgs{
 		State: pulumi.StringRef("available"),

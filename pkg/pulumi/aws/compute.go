@@ -1,6 +1,8 @@
 package awspulumi
 
 import (
+	"fmt"
+
 	model "github.com/ha36d/infy/pkg/pulumi/model"
 	"github.com/ha36d/infy/pkg/pulumi/utils"
 	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws"
@@ -9,6 +11,12 @@ import (
 )
 
 func (Holder) Compute(metadata *model.Metadata, args map[string]any, ctx *pulumi.Context) error {
+
+	stackRef, err := pulumi.NewStackReference(ctx, fmt.Sprintf("%s-%s-%s", metadata.Meta["Team"], metadata.Meta["Name"], metadata.Meta["Env"]), nil)
+	if err != nil {
+		return err
+	}
+
 	available, err := aws.GetAvailabilityZones(ctx, &aws.GetAvailabilityZonesArgs{
 		State: pulumi.StringRef("available"),
 		Filters: []aws.GetAvailabilityZonesFilter{
@@ -44,8 +52,11 @@ func (Holder) Compute(metadata *model.Metadata, args map[string]any, ctx *pulumi
 		return err
 	}
 	_, err = ec2.NewInstance(ctx, args["name"].(string), &ec2.InstanceArgs{
-		Ami:          pulumi.String(image.Id),
-		SubnetId:     privateSubnet.ID(),
+		Ami: pulumi.String(image.Id),
+		SubnetId: stackRef.GetOutput(pulumi.String("privateSubnetId")).ApplyT(func(id interface{}) *string {
+			strId := id.(string)
+			return &strId
+		}).(pulumi.StringPtrOutput),
 		InstanceType: pulumi.String(args["type"].(string)),
 		Tags:         utils.StringMapLabels(metadata),
 		EbsBlockDevices: ec2.InstanceEbsBlockDeviceArray{
