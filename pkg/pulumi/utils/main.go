@@ -7,24 +7,13 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
-func StringMapLabels(metadata *model.Metadata) pulumi.StringMap {
+func Labels(metadata *model.Metadata) pulumi.StringMap {
 
-	stringMapLabels := pulumi.StringMap{}
+	Labels := pulumi.StringMap{}
 	mapLabels := pulumi.Map{}
 	for key, value := range metadata.Meta {
-		stringMapLabels[strings.ToLower(key)] = pulumi.String(strings.ToLower(value))
+		Labels[strings.ToLower(key)] = pulumi.String(strings.ToLower(value))
 		mapLabels[strings.ToLower(key)] = pulumi.String(strings.ToLower(value))
 	}
-	return stringMapLabels
-}
-
-func MapLabels(metadata *model.Metadata) pulumi.Map {
-
-	stringMapLabels := pulumi.StringMap{}
-	mapLabels := pulumi.Map{}
-	for key, value := range metadata.Meta {
-		stringMapLabels[strings.ToLower(key)] = pulumi.String(strings.ToLower(value))
-		mapLabels[strings.ToLower(key)] = pulumi.String(strings.ToLower(value))
-	}
-	return mapLabels
+	return Labels
 }

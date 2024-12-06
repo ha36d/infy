@@ -9,16 +9,16 @@ import (
 
 var subnet *network.Subnet
 
-func (Holder) Network(metadata *model.Metadata, args map[string]any, ctx *pulumi.Context) error {
+func (Holder) Network(metadata *model.Metadata, args map[string]any, ctx *pulumi.Context, tracker *model.ResourceTracker) error {
 	// Virtual Network
 	rg, err := core.LookupResourceGroup(ctx, &core.LookupResourceGroupArgs{
-		Name: metadata.Meta["Name"],
+		Name: metadata.Meta["name"],
 	}, nil)
 	if err != nil {
 		return err
 	}
 	net, err := network.NewVirtualNetwork(ctx, "net", &network.VirtualNetworkArgs{
-		Name: pulumi.String(metadata.Meta["Name"] + "-network"),
+		Name: pulumi.String(metadata.Meta["name"] + "-network"),
 		AddressSpaces: pulumi.StringArray{
 			pulumi.String("10.0.0.0/16"),
 		},
@@ -29,7 +29,7 @@ func (Holder) Network(metadata *model.Metadata, args map[string]any, ctx *pulumi
 		return err
 	}
 	subnet, err := network.NewSubnet(ctx, "subnet", &network.SubnetArgs{
-		Name:               pulumi.String(metadata.Meta["Name"] + "-subnet"),
+		Name:               pulumi.String(metadata.Meta["name"] + "-subnet"),
 		ResourceGroupName:  pulumi.String(rg.Name),
 		VirtualNetworkName: net.Name,
 		AddressPrefixes: pulumi.StringArray{
@@ -44,5 +44,6 @@ func (Holder) Network(metadata *model.Metadata, args map[string]any, ctx *pulumi
 	ctx.Export("vnId", net.ID())
 	ctx.Export("subnetId", subnet.ID())
 
+	tracker.AddResource("network", metadata.Meta["name"], net)
 	return nil
 }

@@ -24,4 +24,4 @@ go.work
 build/
 output/
 infy
-.service.*.yaml
+.service.yaml

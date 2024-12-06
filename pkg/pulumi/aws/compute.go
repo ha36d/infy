@@ -10,12 +10,7 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
-func (Holder) Compute(metadata *model.Metadata, args map[string]any, ctx *pulumi.Context) error {
-
-	stackRef, err := pulumi.NewStackReference(ctx, fmt.Sprintf("%s-%s-%s", metadata.Meta["Team"], metadata.Meta["Name"], metadata.Meta["Env"]), nil)
-	if err != nil {
-		return err
-	}
+func (Holder) Compute(metadata *model.Metadata, args map[string]any, ctx *pulumi.Context, tracker *model.ResourceTracker) error {
 
 	available, err := aws.GetAvailabilityZones(ctx, &aws.GetAvailabilityZonesArgs{
 		State: pulumi.StringRef("available"),
@@ -51,19 +46,22 @@ func (Holder) Compute(metadata *model.Metadata, args map[string]any, ctx *pulumi
 	if err != nil {
 		return err
 	}
-	_, err = ec2.NewInstance(ctx, args["name"].(string), &ec2.InstanceArgs{
-		Ami: pulumi.String(image.Id),
-		SubnetId: stackRef.GetOutput(pulumi.String("privateSubnetId")).ApplyT(func(id interface{}) *string {
-			strId := id.(string)
-			return &strId
-		}).(pulumi.StringPtrOutput),
+
+	networkResource, exists := tracker.GetResource("network", metadata.Meta["name"])
+	if !exists {
+		return fmt.Errorf("network not found")
+	}
+
+	instance, err := ec2.NewInstance(ctx, args["name"].(string), &ec2.InstanceArgs{
+		Ami:          pulumi.String(image.Id),
+		SubnetId:     networkResource.(*ec2.Subnet).ID(),
 		InstanceType: pulumi.String(args["type"].(string)),
-		Tags:         utils.StringMapLabels(metadata),
+		Tags:         utils.Labels(metadata),
 		EbsBlockDevices: ec2.InstanceEbsBlockDeviceArray{
 			&ec2.InstanceEbsBlockDeviceArgs{
 				DeviceName: pulumi.String("/dev/xvdb"),
 				VolumeSize: pulumi.Int(args["size"].(int)),
-				Tags:       utils.StringMapLabels(metadata),
+				Tags:       utils.Labels(metadata),
 			},
 		},
 		AvailabilityZone: pulumi.String(available.Names[0]),
@@ -71,6 +69,6 @@ func (Holder) Compute(metadata *model.Metadata, args map[string]any, ctx *pulumi
 	if err != nil {
 		return err
 	}
-
+	tracker.AddResource("compute", metadata.Meta["name"], instance)
 	return nil
 }

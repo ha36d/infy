@@ -11,11 +11,11 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
-func (Holder) Compute(metadata *model.Metadata, args map[string]any, ctx *pulumi.Context) error {
+func (Holder) Compute(metadata *model.Metadata, args map[string]any, ctx *pulumi.Context, tracker *model.ResourceTracker) error {
 	// here we create the server
 	os := strings.Split(args["image"].(string), "/")
 	rg, err := core.LookupResourceGroup(ctx, &core.LookupResourceGroupArgs{
-		Name: metadata.Meta["Name"],
+		Name: metadata.Meta["name"],
 	}, nil)
 	if err != nil {
 		return err
@@ -35,7 +35,7 @@ func (Holder) Compute(metadata *model.Metadata, args map[string]any, ctx *pulumi
 	if err != nil {
 		return err
 	}
-	_, err = compute.NewVirtualMachine(ctx, "main", &compute.VirtualMachineArgs{
+	vm, err := compute.NewVirtualMachine(ctx, "main", &compute.VirtualMachineArgs{
 		Name:              pulumi.String(args["name"].(string)),
 		Location:          pulumi.String(rg.Location),
 		ResourceGroupName: pulumi.String(rg.Name),
@@ -64,11 +64,11 @@ func (Holder) Compute(metadata *model.Metadata, args map[string]any, ctx *pulumi
 		OsProfileLinuxConfig: &compute.VirtualMachineOsProfileLinuxConfigArgs{
 			DisablePasswordAuthentication: pulumi.Bool(false),
 		},
-		Tags: utils.StringMapLabels(metadata),
+		Tags: utils.Labels(metadata),
 	})
 	if err != nil {
 		return err
 	}
-
+	tracker.AddResource("compute", metadata.Meta["name"], vm)
 	return nil
 }

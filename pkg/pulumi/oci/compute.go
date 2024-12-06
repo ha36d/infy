@@ -9,23 +9,32 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
-func (Holder) Compute(metadata *model.Metadata, args map[string]any, ctx *pulumi.Context) error {
+func (Holder) Compute(metadata *model.Metadata, args map[string]any, ctx *pulumi.Context, tracker *model.ResourceTracker) error {
 
 	availabilityDomains, err := identity.GetAvailabilityDomains(ctx, &identity.GetAvailabilityDomainsArgs{
 		CompartmentId: metadata.Account,
 	})
-
 	if err != nil {
 		return err
 	}
 
-	_, err = core.NewInstance(ctx, args["name"].(string), &core.InstanceArgs{
+	compartmentResource, exists := tracker.GetResource("compartment", metadata.Meta["name"])
+	if !exists {
+		return fmt.Errorf("compartment not found")
+	}
+
+	networkResource, exists := tracker.GetResource("network", metadata.Meta["name"])
+	if !exists {
+		return fmt.Errorf("network not found")
+	}
+
+	instance, err := core.NewInstance(ctx, args["name"].(string), &core.InstanceArgs{
 		AvailabilityDomain: pulumi.String(availabilityDomains.AvailabilityDomains[0].Name),
-		CompartmentId:      compartment.CompartmentId,
+		CompartmentId:      compartmentResource.(*identity.Compartment).ID(),
 		DisplayName:        pulumi.String(args["name"].(string)),
 		Shape:              pulumi.String(args["type"].(string)),
 		CreateVnicDetails: &core.InstanceCreateVnicDetailsArgs{
-			SubnetId:    subnet.ID(),
+			SubnetId:    networkResource.(*core.Vcn).ID(),
 			DisplayName: pulumi.String(args["name"].(string)),
 		},
 		SourceDetails: &core.InstanceSourceDetailsArgs{
@@ -36,8 +45,8 @@ func (Holder) Compute(metadata *model.Metadata, args map[string]any, ctx *pulumi
 	})
 
 	if err != nil {
-		fmt.Printf("TEST1")
 		return err
 	}
+	tracker.AddResource("compute", metadata.Meta["name"], instance)
 	return nil
 }

@@ -6,7 +6,7 @@
             "properties": {
             "name": { "type": "string" }
             },
-            "required": ["name"]
+            "required": ["name", "org"]
         },
         "cloud": {
             "type": "string",

@@ -9,19 +9,20 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
-func (Holder) Storage(metadata *model.Metadata, args map[string]any, ctx *pulumi.Context) error {
-	// here we create the bucket
-
-	_, err := storage.NewBucket(ctx, args["name"].(string), &storage.BucketArgs{
-		Name:                     pulumi.String(args["name"].(string)),
+func (h Holder) Storage(metadata *model.Metadata, values map[string]any, ctx *pulumi.Context, tracker *model.ResourceTracker) error {
+	// Create storage using network from tracker if needed
+	storage, err := storage.NewBucket(ctx, values["name"].(string), &storage.BucketArgs{
+		Name:                     pulumi.String(values["name"].(string)),
 		Location:                 pulumi.String(strings.ToUpper(metadata.Region[:2])),
 		ForceDestroy:             pulumi.Bool(true),
 		UniformBucketLevelAccess: pulumi.Bool(true),
-		Labels:                   utils.StringMapLabels(metadata),
+		Labels:                   utils.Labels(metadata),
 	})
 	if err != nil {
 		return err
 	}
 
+	// Add the storage to the tracker
+	tracker.AddResource("storage", metadata.Meta["name"], storage)
 	return nil
 }

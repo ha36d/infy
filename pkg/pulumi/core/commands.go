@@ -2,7 +2,6 @@ package corepulumi
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"reflect"
 
@@ -36,10 +35,10 @@ func Preview(ctx context.Context, meta map[string]string, cloud string,
 	stdoutStreamer := optpreview.ProgressStreams(os.Stdout)
 	_, err := stack.Preview(ctx, stdoutStreamer)
 	if err != nil {
-		log.Printf("Failed to preview %s stack: %v\n\n", metadata.Meta["Name"], err)
+		log.Printf("Failed to preview %s stack: %v\n\n", metadata.Meta["name"], err)
 		os.Exit(1)
 	}
-	log.Printf("%s stack preview succeeded!", metadata.Meta["Name"])
+	log.Printf("%s stack preview succeeded!", metadata.Meta["name"])
 }
 
 func Up(ctx context.Context, meta map[string]string, cloud string,
@@ -52,22 +51,19 @@ func Up(ctx context.Context, meta map[string]string, cloud string,
 	stdoutStreamer := optup.ProgressStreams(os.Stdout)
 	_, err := stack.Up(ctx, stdoutStreamer)
 	if err != nil {
-		log.Printf("Failed to update %s stack: %v\n\n", metadata.Meta["Name"], err)
+		log.Printf("Failed to update %s stack: %v\n\n", metadata.Meta["name"], err)
 		os.Exit(1)
 	}
-	log.Printf("%s stack update succeeded!", metadata.Meta["Name"])
+	log.Printf("%s stack update succeeded!", metadata.Meta["name"])
 }
 
 // this function gets our object stack ready for update/destroy
 func createOrSelectObjectStack(ctx context.Context, metadata *model.Metadata, components []map[string]any) auto.Stack {
 	deployFunc := func(ctx *pulumi.Context) error {
-		if metadata.Cloud == AZURE {
-			log.Printf("preparing resourcegroup function\n")
-			azurepulumi.Holder{}.Resourcegroup(metadata, ctx)
-		} else if metadata.Cloud == OCI {
-			log.Printf("preparing compartment function\n")
-			ocipulumi.Holder{}.Compartment(metadata, ctx)
-		}
+		// Create a tracker to store resources
+		tracker := model.NewResourceTracker()
+
+		// Process all components in order
 		for _, component := range components {
 			for key, value := range component {
 				log.Printf("preparing %s function\n", key)
@@ -77,22 +73,28 @@ func createOrSelectObjectStack(ctx context.Context, metadata *model.Metadata, co
 				switch metadata.Cloud {
 				case GCP:
 					f := reflect.ValueOf(gcppulumi.Holder{}).
-						MethodByName(strcase.ToCamel(key)).Interface().(func(*model.Metadata, map[string]any, *pulumi.Context) error)
-					err = f(metadata, values, ctx)
+						MethodByName(strcase.ToCamel(key)).
+						Interface().(func(*model.Metadata, map[string]any, *pulumi.Context, *model.ResourceTracker) error)
+					err = f(metadata, values, ctx, tracker)
 				case AWS:
 					f := reflect.ValueOf(awspulumi.Holder{}).
-						MethodByName(strcase.ToCamel(key)).Interface().(func(*model.Metadata, map[string]any, *pulumi.Context) error)
-					err = f(metadata, values, ctx)
+						MethodByName(strcase.ToCamel(key)).
+						Interface().(func(*model.Metadata, map[string]any, *pulumi.Context, *model.ResourceTracker) error)
+					err = f(metadata, values, ctx, tracker)
 				case AZURE:
 					f := reflect.ValueOf(azurepulumi.Holder{}).
-						MethodByName(strcase.ToCamel(key)).Interface().(func(*model.Metadata, map[string]any, *pulumi.Context) error)
-					err = f(metadata, values, ctx)
+						MethodByName(strcase.ToCamel(key)).
+						Interface().(func(*model.Metadata, map[string]any, *pulumi.Context, *model.ResourceTracker) error)
+					err = f(metadata, values, ctx, tracker)
 				case OCI:
 					f := reflect.ValueOf(ocipulumi.Holder{}).
-						MethodByName(strcase.ToCamel(key)).Interface().(func(*model.Metadata, map[string]any, *pulumi.Context) error)
-					err = f(metadata, values, ctx)
+						MethodByName(strcase.ToCamel(key)).
+						Interface().(func(*model.Metadata, map[string]any, *pulumi.Context, *model.ResourceTracker) error)
+					err = f(metadata, values, ctx, tracker)
 				}
-				log.Println(err)
+				if err != nil {
+					return err
+				}
 			}
 		}
 		return nil
@@ -103,10 +105,9 @@ func createOrSelectObjectStack(ctx context.Context, metadata *model.Metadata, co
 // this function gets our stack ready for update/destroy by prepping the workspace, init/selecting the stack
 // and doing a refresh to make sure state and cloud resources are in sync
 func createOrSelectStack(ctx context.Context, metadata *model.Metadata, deployFunc pulumi.RunFunc) auto.Stack {
-	stackName := fmt.Sprintf("%s-%s-%s", metadata.Meta["Team"], metadata.Meta["Name"], metadata.Meta["Env"])
+	stackName := auto.FullyQualifiedStackName(metadata.Meta["org"], metadata.Meta["name"], metadata.Meta["env"])
 	// create or select a stack with an inline Pulumi program
-
-	s, err := auto.UpsertStackInlineSource(ctx, stackName, metadata.Meta["Team"], deployFunc)
+	s, err := auto.UpsertStackInlineSource(ctx, stackName, metadata.Meta["name"], deployFunc)
 	if err != nil {
 		log.Printf("Failed to create or select stack: %v\n", err)
 		os.Exit(1)

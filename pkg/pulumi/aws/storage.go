@@ -7,7 +7,7 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
-func (Holder) Storage(metadata *model.Metadata, args map[string]any, ctx *pulumi.Context) error {
+func (Holder) Storage(metadata *model.Metadata, args map[string]any, ctx *pulumi.Context, tracker *model.ResourceTracker) error {
 	// here we create the bucket
 	var acl string
 	if args["acl"] != nil {
@@ -15,14 +15,14 @@ func (Holder) Storage(metadata *model.Metadata, args map[string]any, ctx *pulumi
 	} else {
 		acl = "private"
 	}
-	_, err := s3.NewBucket(ctx, args["name"].(string), &s3.BucketArgs{
+	bucket, err := s3.NewBucket(ctx, args["name"].(string), &s3.BucketArgs{
 		Bucket: pulumi.String(args["name"].(string)),
 		Acl:    pulumi.String(acl),
-		Tags:   utils.StringMapLabels(metadata),
+		Tags:   utils.Labels(metadata),
 	})
 	if err != nil {
 		return err
 	}
-
+	tracker.AddResource("storage", metadata.Meta["name"], bucket)
 	return nil
 }
