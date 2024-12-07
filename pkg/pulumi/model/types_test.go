@@ -1,293 +1,190 @@
 package model
 
 import (
-	"reflect"
-	"sync"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNewResourceTracker(t *testing.T) {
-	tests := []struct {
-		name string
-		want *ResourceTracker
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := NewResourceTracker(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NewResourceTracker() = %v, want %v", got, tt.want)
-			}
-		})
-	}
+	tracker := NewResourceTracker()
+	assert.NotNil(t, tracker.resources)
+	assert.NotNil(t, tracker.metadata)
 }
 
 func TestResourceTracker_AddResource(t *testing.T) {
-	type fields struct {
-		resources map[string]map[string]interface{}
-		metadata  map[string]map[string]ResourceMetadata
-		mu        sync.RWMutex
-	}
-	type args struct {
-		resourceType string
-		name         string
-		resource     interface{}
-		dependencies []string
-	}
+	tracker := NewResourceTracker()
+
 	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		wantErr bool
+		name         string
+		resourceType string
+		resourceName string
+		resource     interface{}
+		deps         []string
+		wantErr      bool
 	}{
-		// TODO: Add test cases.
+		{
+			name:         "add valid resource",
+			resourceType: "storage",
+			resourceName: "test-bucket",
+			resource:     "mock-resource",
+			deps:         nil,
+			wantErr:      false,
+		},
+		{
+			name:         "add resource with dependencies",
+			resourceType: "compute",
+			resourceName: "test-vm",
+			resource:     "mock-vm",
+			deps:         []string{"network"},
+			wantErr:      false,
+		},
+		{
+			name:         "empty resource type",
+			resourceType: "",
+			resourceName: "test",
+			resource:     "mock",
+			deps:         nil,
+			wantErr:      true,
+		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			rt := &ResourceTracker{
-				resources: tt.fields.resources,
-				metadata:  tt.fields.metadata,
-				mu:        tt.fields.mu,
-			}
-			if err := rt.AddResource(tt.args.resourceType, tt.args.name, tt.args.resource, tt.args.dependencies...); (err != nil) != tt.wantErr {
-				t.Errorf("ResourceTracker.AddResource() error = %v, wantErr %v", err, tt.wantErr)
+			err := tracker.AddResource(tt.resourceType, tt.resourceName, tt.resource, tt.deps...)
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+
+				// Verify resource was added
+				resource, exists := tracker.GetResource(tt.resourceType, tt.resourceName)
+				assert.True(t, exists)
+				assert.Equal(t, tt.resource, resource)
+
+				// Verify metadata was created
+				state, err := tracker.GetResourceState(tt.resourceType, tt.resourceName)
+				assert.NoError(t, err)
+				assert.Equal(t, ResourceStatePending, state)
+
+				// Verify dependencies
+				if len(tt.deps) > 0 {
+					deps, err := tracker.GetDependencies(tt.resourceType, tt.resourceName)
+					assert.NoError(t, err)
+					assert.Equal(t, tt.deps, deps.DependsOn)
+				}
 			}
 		})
 	}
 }
 
 func TestResourceTracker_UpdateResourceState(t *testing.T) {
-	type fields struct {
-		resources map[string]map[string]interface{}
-		metadata  map[string]map[string]ResourceMetadata
-		mu        sync.RWMutex
-	}
-	type args struct {
-		resourceType string
-		name         string
-		state        ResourceState
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			rt := &ResourceTracker{
-				resources: tt.fields.resources,
-				metadata:  tt.fields.metadata,
-				mu:        tt.fields.mu,
-			}
-			if err := rt.UpdateResourceState(tt.args.resourceType, tt.args.name, tt.args.state); (err != nil) != tt.wantErr {
-				t.Errorf("ResourceTracker.UpdateResourceState() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
+	tracker := NewResourceTracker()
+	resourceType := "storage"
+	resourceName := "test-bucket"
 
-func TestResourceTracker_GetResourceState(t *testing.T) {
-	type fields struct {
-		resources map[string]map[string]interface{}
-		metadata  map[string]map[string]ResourceMetadata
-		mu        sync.RWMutex
-	}
-	type args struct {
-		resourceType string
-		name         string
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    ResourceState
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			rt := &ResourceTracker{
-				resources: tt.fields.resources,
-				metadata:  tt.fields.metadata,
-				mu:        tt.fields.mu,
-			}
-			got, err := rt.GetResourceState(tt.args.resourceType, tt.args.name)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("ResourceTracker.GetResourceState() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if got != tt.want {
-				t.Errorf("ResourceTracker.GetResourceState() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
+	// Add a resource first
+	err := tracker.AddResource(resourceType, resourceName, "mock-resource")
+	assert.NoError(t, err)
 
-func TestResourceTracker_GetDependencies(t *testing.T) {
-	type fields struct {
-		resources map[string]map[string]interface{}
-		metadata  map[string]map[string]ResourceMetadata
-		mu        sync.RWMutex
-	}
-	type args struct {
-		resourceType string
-		name         string
-	}
 	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    ResourceDependency
-		wantErr bool
+		name     string
+		resType  string
+		resName  string
+		newState ResourceState
+		wantErr  bool
 	}{
-		// TODO: Add test cases.
+		{
+			name:     "update to creating",
+			resType:  resourceType,
+			resName:  resourceName,
+			newState: ResourceStateCreating,
+			wantErr:  false,
+		},
+		{
+			name:     "update non-existent resource",
+			resType:  "invalid",
+			resName:  "invalid",
+			newState: ResourceStateCreating,
+			wantErr:  true,
+		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			rt := &ResourceTracker{
-				resources: tt.fields.resources,
-				metadata:  tt.fields.metadata,
-				mu:        tt.fields.mu,
-			}
-			got, err := rt.GetDependencies(tt.args.resourceType, tt.args.name)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("ResourceTracker.GetDependencies() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("ResourceTracker.GetDependencies() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
 
-func TestResourceTracker_GetResource(t *testing.T) {
-	type fields struct {
-		resources map[string]map[string]interface{}
-		metadata  map[string]map[string]ResourceMetadata
-		mu        sync.RWMutex
-	}
-	type args struct {
-		resourceType string
-		name         string
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   interface{}
-		want1  bool
-	}{
-		// TODO: Add test cases.
-	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			rt := &ResourceTracker{
-				resources: tt.fields.resources,
-				metadata:  tt.fields.metadata,
-				mu:        tt.fields.mu,
-			}
-			got, got1 := rt.GetResource(tt.args.resourceType, tt.args.name)
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("ResourceTracker.GetResource() got = %v, want %v", got, tt.want)
-			}
-			if got1 != tt.want1 {
-				t.Errorf("ResourceTracker.GetResource() got1 = %v, want %v", got1, tt.want1)
+			err := tracker.UpdateResourceState(tt.resType, tt.resName, tt.newState)
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				state, err := tracker.GetResourceState(tt.resType, tt.resName)
+				assert.NoError(t, err)
+				assert.Equal(t, tt.newState, state)
 			}
 		})
 	}
 }
 
 func TestResourceTracker_GetResourcesByType(t *testing.T) {
-	type fields struct {
-		resources map[string]map[string]interface{}
-		metadata  map[string]map[string]ResourceMetadata
-		mu        sync.RWMutex
+	tracker := NewResourceTracker()
+
+	// Add some resources
+	resources := map[string]interface{}{
+		"bucket1": "mock-bucket-1",
+		"bucket2": "mock-bucket-2",
 	}
-	type args struct {
-		resourceType string
+
+	for name, res := range resources {
+		err := tracker.AddResource("storage", name, res)
+		assert.NoError(t, err)
 	}
-	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   map[string]interface{}
-	}{
-		// TODO: Add test cases.
+
+	// Test getting resources
+	got := tracker.GetResourcesByType("storage")
+	assert.Equal(t, len(resources), len(got))
+	for name, res := range resources {
+		assert.Equal(t, res, got[name])
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			rt := &ResourceTracker{
-				resources: tt.fields.resources,
-				metadata:  tt.fields.metadata,
-				mu:        tt.fields.mu,
-			}
-			if got := rt.GetResourcesByType(tt.args.resourceType); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("ResourceTracker.GetResourcesByType() = %v, want %v", got, tt.want)
-			}
-		})
-	}
+
+	// Test non-existent type
+	got = tracker.GetResourcesByType("invalid")
+	assert.Nil(t, got)
 }
 
 func TestResourceTracker_DeleteResource(t *testing.T) {
-	type fields struct {
-		resources map[string]map[string]interface{}
-		metadata  map[string]map[string]ResourceMetadata
-		mu        sync.RWMutex
-	}
-	type args struct {
-		resourceType string
-		name         string
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			rt := &ResourceTracker{
-				resources: tt.fields.resources,
-				metadata:  tt.fields.metadata,
-				mu:        tt.fields.mu,
-			}
-			if err := rt.DeleteResource(tt.args.resourceType, tt.args.name); (err != nil) != tt.wantErr {
-				t.Errorf("ResourceTracker.DeleteResource() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
+	tracker := NewResourceTracker()
+
+	// Add a resource
+	err := tracker.AddResource("storage", "test-bucket", "mock-resource")
+	assert.NoError(t, err)
+
+	// Test deletion
+	err = tracker.DeleteResource("storage", "test-bucket")
+	assert.NoError(t, err)
+
+	// Verify resource is gone
+	_, exists := tracker.GetResource("storage", "test-bucket")
+	assert.False(t, exists)
+
+	// Test deleting non-existent resource
+	err = tracker.DeleteResource("invalid", "invalid")
+	assert.Error(t, err)
 }
 
 func TestResourceTracker_ListResourceTypes(t *testing.T) {
-	type fields struct {
-		resources map[string]map[string]interface{}
-		metadata  map[string]map[string]ResourceMetadata
-		mu        sync.RWMutex
+	tracker := NewResourceTracker()
+
+	// Add resources of different types
+	resourceTypes := []string{"storage", "compute", "network"}
+	for _, rt := range resourceTypes {
+		err := tracker.AddResource(rt, "test", "mock")
+		assert.NoError(t, err)
 	}
-	tests := []struct {
-		name   string
-		fields fields
-		want   []string
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			rt := &ResourceTracker{
-				resources: tt.fields.resources,
-				metadata:  tt.fields.metadata,
-				mu:        tt.fields.mu,
-			}
-			if got := rt.ListResourceTypes(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("ResourceTracker.ListResourceTypes() = %v, want %v", got, tt.want)
-			}
-		})
+
+	// Test listing types
+	types := tracker.ListResourceTypes()
+	assert.Equal(t, len(resourceTypes), len(types))
+	for _, rt := range resourceTypes {
+		assert.Contains(t, types, rt)
 	}
 }
