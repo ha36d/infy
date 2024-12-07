@@ -10,6 +10,7 @@ import (
 func TestHolder_Resourcegroup(t *testing.T) {
 	type args struct {
 		metadata *model.Metadata
+		args     map[string]any
 		ctx      *pulumi.Context
 		tracker  *model.ResourceTracker
 	}
@@ -24,7 +25,7 @@ func TestHolder_Resourcegroup(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			h := Holder{}
-			if err := h.Resourcegroup(tt.args.metadata, tt.args.ctx, tt.args.tracker); (err != nil) != tt.wantErr {
+			if err := h.Resourcegroup(tt.args.metadata, tt.args.args, tt.args.ctx, tt.args.tracker); (err != nil) != tt.wantErr {
 				t.Errorf("Holder.Resourcegroup() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

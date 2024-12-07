@@ -6,10 +6,10 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
-func (Holder) Resourcegroup(metadata *model.Metadata, ctx *pulumi.Context, tracker *model.ResourceTracker) error {
+func (Holder) Resourcegroup(metadata *model.Metadata, args map[string]any, ctx *pulumi.Context, tracker *model.ResourceTracker) error {
 	// here we create the bucket
 	rg, err := core.NewResourceGroup(ctx, metadata.Meta["name"], &core.ResourceGroupArgs{
-		Name:     pulumi.String(metadata.Meta["name"]),
+		Name:     pulumi.String(args["name"].(string)),
 		Location: pulumi.String(metadata.Region),
 	})
 	if err != nil {
