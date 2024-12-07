@@ -12,6 +12,7 @@ func TestHolder_Compute(t *testing.T) {
 		metadata *model.Metadata
 		args     map[string]any
 		ctx      *pulumi.Context
+		tracker  *model.ResourceTracker
 	}
 	tests := []struct {
 		name    string
@@ -24,7 +25,7 @@ func TestHolder_Compute(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			h := Holder{}
-			if err := h.Compute(tt.args.metadata, tt.args.args, tt.args.ctx); (err != nil) != tt.wantErr {
+			if err := h.Compute(tt.args.metadata, tt.args.args, tt.args.ctx, tt.args.tracker); (err != nil) != tt.wantErr {
 				t.Errorf("Holder.Compute() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

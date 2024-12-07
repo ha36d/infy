@@ -1,54 +1,103 @@
-# infy
+# Infy
 
-## Overview
-Abstraction on top of pulumi.
+Infy is a multi-cloud infrastructure management tool built on top of Pulumi, supporting AWS, Azure, GCP, and OCI cloud providers.
 
 ## Features
-- Describe the infra (AWS, AZURE, GCP) as yaml file
-- Build the infra (AWS, AZURE, GCP) from a yaml file
 
-## How to
+- Multi-cloud support (AWS, Azure, GCP, OCI)
+- Declarative YAML configuration
+- Resource dependency management
+- Consistent interface across cloud providers
+- Preview infrastructure changes
+- State management via Pulumi
 
-First you need to install [pulumi](https://www.pulumi.com/docs/install/).
-Then, we need the state management:
-```
-pulumi login
-```
-Then you can create the Yaml file by executing
-```
-./infy generate -c service.yaml
+## Supported Resources
+
+Currently supported resources across providers:
+
+| Resource Type | AWS | Azure | GCP | OCI |
+|--------------|-----|-------|-----|-----|
+| Storage      | S3  | Blob  | GCS | Object Storage |
+| Compute      | EC2 | VM    | GCE | Compute Instance |
+| Network      | VPC | VNet  | VPC | VCN |
+
+## Installation
+
+```bash
+go install github.com/ha36d/infy@latest
 ```
 
-A file `service.yaml` will be create that describes the infrastructure, 
-```
-cat service.yaml
+## Quick Start
 
-name: Myservice
-team: MyTeam
-cloud: gcp
-account: project
+1. Create a configuration file (.infy.yaml):
+
+```yaml
+metadata:
+  name: myservice
+  team: myteam
+  env: development
+  org: myorg
+cloud: aws
+account: "123456789"
 region: us-west-2
-env: development
 components:
-  Storage:
-    name: someRandomStorageSystem
+  - Storage:
+      name: mybucket
+  - Compute:
+      name: myserver
+      type: t2.micro
+      size: 20
 ```
 
-and then you can apply the file in the cloud by
-
+2. Preview changes:
+```bash
+infy preview
 ```
-./infy build -c service.yaml
+
+3. Apply changes:
+```bash
+infy build
 ```
 
-## Limitations
-- For the moment, storage and VM are supported.
+## Configuration
 
+### Metadata
+- `name`: Service name
+- `team`: Team name
+- `env`: Environment (development, staging, production)
+- `org`: Organization name
 
-## Acknowledgements
+### Cloud Providers
+- `cloud`: Cloud provider (aws, azure, gcp, oci)
+- `account`: Account ID/Project ID
+- `region`: Region for deployment
 
-This couldn't work without
+### Components
+Components are defined as a list of resources to be created. Each resource type has its own configuration options.
 
- - [Pulumi](https://github.com/pulumi/pulumi)
- - [Cobra](https://github.com/spf13/cobra/)
- - [Viper](https://github.com/spf13/viper)
- - [Goreleaser](https://github.com/Goreleaser)
+## Usage
+
+### Preview Changes
+```bash
+infy preview [--timeout 30m]
+```
+
+### Apply Changes
+```bash
+infy build [--timeout 2h] [--force]
+```
+
+### Common Flags
+- `--config`: Specify config file (default: .infy.yaml)
+- `--verbose`: Enable verbose logging
+- `--timeout`: Operation timeout
+
+## Contributing
+
+See [CONTRIBUTE.md](CONTRIBUTE.md) for technical details on how to add new resources and contribute to the project.
+
+## License
+
+Apache License 2.0 - see [LICENSE](LICENSE) file for details.
+
+This project uses [Pulumi](https://github.com/pulumi/pulumi) which is licensed under the Apache License 2.0.

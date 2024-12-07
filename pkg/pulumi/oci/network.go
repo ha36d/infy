@@ -7,40 +7,38 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
-var vcn *core.Vcn
-var subnet *core.Subnet
-
-func (Holder) Network(metadata *model.Metadata, ctx *pulumi.Context) error {
-	compartment, err := identity.NewCompartment(ctx, metadata.Name, &identity.CompartmentArgs{
+func (Holder) Network(metadata *model.Metadata, ctx *pulumi.Context, tracker *model.ResourceTracker) error {
+	compartment, err := identity.NewCompartment(ctx, metadata.Meta["name"], &identity.CompartmentArgs{
 		CompartmentId: pulumi.String(metadata.Account),
-		Description:   pulumi.String(metadata.Name),
-		Name:          pulumi.String(metadata.Name),
+		Description:   pulumi.String(metadata.Meta["name"]),
+		Name:          pulumi.String(metadata.Meta["name"]),
 	})
-
 	if err != nil {
 		return err
 	}
 
-	vcn, err = core.NewVcn(ctx, metadata.Name, &core.VcnArgs{
+	vcn, err := core.NewVcn(ctx, metadata.Meta["name"], &core.VcnArgs{
 		CidrBlock:     pulumi.String("10.0.0.0/16"),
 		CompartmentId: compartment.CompartmentId,
-		DisplayName:   pulumi.String(metadata.Name),
+		DisplayName:   pulumi.String(metadata.Meta["name"]),
 	}, pulumi.DependsOn([]pulumi.Resource{compartment}))
-
 	if err != nil {
 		return err
 	}
 
-	subnet, err = core.NewSubnet(ctx, metadata.Name, &core.SubnetArgs{
+	subnet, err := core.NewSubnet(ctx, metadata.Meta["name"], &core.SubnetArgs{
 		VcnId:         vcn.ID(),
 		CidrBlock:     pulumi.String("10.0.1.0/24"),
 		CompartmentId: compartment.CompartmentId,
-		DisplayName:   pulumi.String(metadata.Name),
+		DisplayName:   pulumi.String(metadata.Meta["name"]),
 	}, pulumi.DependsOn([]pulumi.Resource{vcn}))
-
 	if err != nil {
 		return err
 	}
 
+	// Export VPC and subnet information
+	ctx.Export("vcnId", vcn.ID())
+	ctx.Export("subnetId", subnet.ID())
+	tracker.AddResource("network", metadata.Meta["name"], vcn)
 	return nil
 }
