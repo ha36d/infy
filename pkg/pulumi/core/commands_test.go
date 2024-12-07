@@ -17,17 +17,20 @@ func TestPreview(t *testing.T) {
 		cloud      string
 		account    string
 		region     string
-		components []map[string]any
+		components []map[string]map[string]any
 	}
 	tests := []struct {
-		name string
-		args args
+		name    string
+		args    args
+		wantErr bool
 	}{
 		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			Preview(tt.args.ctx, tt.args.meta, tt.args.cloud, tt.args.account, tt.args.region, tt.args.components)
+			if err := Preview(tt.args.ctx, tt.args.meta, tt.args.cloud, tt.args.account, tt.args.region, tt.args.components); (err != nil) != tt.wantErr {
+				t.Errorf("Preview() error = %v, wantErr %v", err, tt.wantErr)
+			}
 		})
 	}
 }
@@ -39,17 +42,20 @@ func TestUp(t *testing.T) {
 		cloud      string
 		account    string
 		region     string
-		components []map[string]any
+		components []map[string]map[string]any
 	}
 	tests := []struct {
-		name string
-		args args
+		name    string
+		args    args
+		wantErr bool
 	}{
 		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			Up(tt.args.ctx, tt.args.meta, tt.args.cloud, tt.args.account, tt.args.region, tt.args.components)
+			if err := Up(tt.args.ctx, tt.args.meta, tt.args.cloud, tt.args.account, tt.args.region, tt.args.components); (err != nil) != tt.wantErr {
+				t.Errorf("Up() error = %v, wantErr %v", err, tt.wantErr)
+			}
 		})
 	}
 }
@@ -58,7 +64,7 @@ func Test_createOrSelectObjectStack(t *testing.T) {
 	type args struct {
 		ctx        context.Context
 		metadata   *model.Metadata
-		components []map[string]any
+		components []map[string]map[string]any
 	}
 	tests := []struct {
 		name string

@@ -1,3 +1,3 @@
-name: pulum
+name: infy
 runtime: go
-description: A minimal Go Pulumi program
+description: Multi-cloud infrastructure management tool supporting AWS, Azure, GCP, and OCI

@@ -4,7 +4,10 @@
         "metadata": {
             "type": "object",
             "properties": {
-            "name": { "type": "string" }
+                "name": { "type": "string" },
+                "org": { "type": "string" },
+                "team": { "type": "string" },
+                "env": { "type": "string" }
             },
             "required": ["name", "org"]
         },
@@ -13,7 +16,25 @@
             "enum": ["aws", "azure", "gcp", "oci"]
         },
         "account": { "type": "string" },
-        "region": { "type": "string" }
+        "region": { "type": "string" },
+        "components": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "patternProperties": {
+                    "^[A-Za-z]+$": {
+                        "type": "object",
+                        "properties": {
+                            "name": { "type": "string" },
+                            "description": { "type": "string" }
+                        },
+                        "required": ["name"]
+                    }
+                },
+                "minProperties": 1,
+                "maxProperties": 1
+            }
+        }
     },
-    "required": ["metadata", "cloud", "account", "region"]
+    "required": ["metadata", "cloud", "account", "region", "components"]
 }

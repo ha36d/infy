@@ -26,48 +26,34 @@ const AWS = "aws"
 const OCI = "oci"
 
 func Preview(ctx context.Context, meta map[string]string, cloud string,
-	account string, region string, components []map[string]any) {
+	account string, region string, components []map[string]map[string]any) error {
 	metadata := model.Metadata{Meta: meta, Cloud: cloud, Account: account, Region: region}
 
 	stack := createOrSelectObjectStack(ctx, &metadata, components)
-	// wire up our update to stream progress to stdout
-
 	stdoutStreamer := optpreview.ProgressStreams(os.Stdout)
 	_, err := stack.Preview(ctx, stdoutStreamer)
-	if err != nil {
-		log.Printf("Failed to preview %s stack: %v\n\n", metadata.Meta["name"], err)
-		os.Exit(1)
-	}
-	log.Printf("%s stack preview succeeded!", metadata.Meta["name"])
+	return err
 }
 
 func Up(ctx context.Context, meta map[string]string, cloud string,
-	account string, region string, components []map[string]any) {
+	account string, region string, components []map[string]map[string]any) error {
 	metadata := model.Metadata{Meta: meta, Cloud: cloud, Account: account, Region: region}
 
 	stack := createOrSelectObjectStack(ctx, &metadata, components)
-	// wire up our update to stream progress to stdout
-
 	stdoutStreamer := optup.ProgressStreams(os.Stdout)
 	_, err := stack.Up(ctx, stdoutStreamer)
-	if err != nil {
-		log.Printf("Failed to update %s stack: %v\n\n", metadata.Meta["name"], err)
-		os.Exit(1)
-	}
-	log.Printf("%s stack update succeeded!", metadata.Meta["name"])
+	return err
 }
 
 // this function gets our object stack ready for update/destroy
-func createOrSelectObjectStack(ctx context.Context, metadata *model.Metadata, components []map[string]any) auto.Stack {
+func createOrSelectObjectStack(ctx context.Context, metadata *model.Metadata, components []map[string]map[string]any) auto.Stack {
 	deployFunc := func(ctx *pulumi.Context) error {
-		// Create a tracker to store resources
 		tracker := model.NewResourceTracker()
 
 		// Process all components in order
 		for _, component := range components {
-			for key, value := range component {
+			for key, values := range component {
 				log.Printf("preparing %s function\n", key)
-				values := value.(map[string]any)
 				var err error
 
 				switch metadata.Cloud {
