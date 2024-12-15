@@ -17,9 +17,10 @@ Currently supported resources across providers:
 
 | Resource Type | AWS | Azure | GCP | OCI |
 |--------------|-----|-------|-----|-----|
+| ResourceGroup  | -   | ResourceGroup | -   | Compartment |
+| Network      | VPC | VNet  | VPC | VCN |
 | Storage      | S3  | Blob  | GCS | Object Storage |
 | Compute      | EC2 | VM    | GCE | Compute Instance |
-| Network      | VPC | VNet  | VPC | VCN |
 
 ## Installation
 
