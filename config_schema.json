@@ -26,7 +26,13 @@
                         "type": "object",
                         "properties": {
                             "name": { "type": "string" },
-                            "description": { "type": "string" }
+                            "description": { "type": "string" },
+                            "cidr": {
+                                "type": "string",
+                                "default": "10.0.0.0/24",
+                                "pattern": "^([0-9]{1,3}\\.){3}[0-9]{1,3}/[0-9]{1,2}$",
+                                "description": "CIDR range for the subnet"
+                            }
                         },
                         "required": ["name"]
                     }
@@ -34,7 +40,33 @@
                 "minProperties": 1,
                 "maxProperties": 1
             }
+        },
+        "network": {
+            "type": "object",
+            "description": "Network configuration for GCP",
+            "properties": {
+                "cidr": {
+                    "type": "string",
+                    "description": "CIDR range for the subnet (e.g., '10.0.0.0/24')",
+                    "pattern": "^([0-9]{1,3}\\.){3}[0-9]{1,3}/[0-9]{1,2}$"
+                },
+                "ports": {
+                    "type": "array",
+                    "description": "List of ports with their protocols (format: 'protocol:port')",
+                    "items": {
+                        "type": "string",
+                        "pattern": "^(tcp|udp):[0-9]{1,5}$",
+                        "description": "Port specification in format 'protocol:port' (e.g., 'tcp:80', 'udp:53')"
+                    }
+                }
+            },
+            "required": ["cidr", "ports"],
+            "additionalProperties": false,
+            "examples": [{
+                "cidr": "10.0.0.0/24",
+                "ports": ["tcp:80", "tcp:443", "udp:53"]
+            }]
         }
     },
-    "required": ["metadata", "cloud", "account", "region", "components"]
+    "required": ["metadata", "cloud", "account", "region", "components", "network"]
 }
