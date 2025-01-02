@@ -8,7 +8,7 @@ import (
 
 var subnet *compute.Subnetwork
 
-func (Holder) Requirements(metadata *model.Metadata, args map[string]any, ctx *pulumi.Context, tracker *model.ResourceTracker) error {
+func (Holder) Network(metadata *model.Metadata, args map[string]any, ctx *pulumi.Context, tracker *model.ResourceTracker) error {
 
 	network, err := compute.NewNetwork(ctx, metadata.Meta["name"]+"-network", &compute.NetworkArgs{
 		AutoCreateSubnetworks: pulumi.Bool(false),
