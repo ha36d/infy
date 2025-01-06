@@ -1,0 +1,21 @@
+metadata:
+  name: MyNewserviceInGCP
+  team: MyTeam
+  env: development
+  org: ha36d
+cloud: gcp
+account: inbound-theory-444816-b6
+region: europe-west9
+components:
+  - Network:
+      name: mtestnetwork
+      cidr: 10.0.0.0/24
+      ports:
+        - tcp:80
+        - tcp:443
+        - udp:53
+  - Compute:
+      name: MTestRandomStorages
+      type: n1-standard-1
+      size: 10
+      image: ubuntu-1804
