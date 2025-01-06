@@ -10,7 +10,7 @@ var subnet *compute.Subnetwork
 
 func (Holder) Network(metadata *model.Metadata, args map[string]any, ctx *pulumi.Context, tracker *model.ResourceTracker) error {
 
-	network, err := compute.NewNetwork(ctx, metadata.Meta["name"]+"-network", &compute.NetworkArgs{
+	network, err := compute.NewNetwork(ctx, args["name"].(string)+"-network", &compute.NetworkArgs{
 		AutoCreateSubnetworks: pulumi.Bool(false),
 	})
 	if err != nil {
@@ -18,7 +18,7 @@ func (Holder) Network(metadata *model.Metadata, args map[string]any, ctx *pulumi
 	}
 
 	// 2. Create a new subnet within the network
-	subnet, err := compute.NewSubnetwork(ctx, metadata.Meta["name"]+"-subnet", &compute.SubnetworkArgs{
+	subnet, err := compute.NewSubnetwork(ctx, args["name"].(string)+"-subnet", &compute.SubnetworkArgs{
 		IpCidrRange: pulumi.String(args["cidr"].(string)),
 		Region:      pulumi.String(metadata.Region),
 		Network:     network.ID(),
@@ -71,7 +71,7 @@ func (Holder) Network(metadata *model.Metadata, args map[string]any, ctx *pulumi
 
 	// Only create firewall if there are rules to apply
 	if len(allows) > 0 {
-		firewall, err := compute.NewFirewall(ctx, metadata.Meta["name"]+"-firewall", &compute.FirewallArgs{
+		firewall, err := compute.NewFirewall(ctx, args["name"].(string)+"-firewall", &compute.FirewallArgs{
 			Network: network.ID(),
 			Allows:  allows,
 			SourceRanges: pulumi.StringArray{
@@ -86,6 +86,6 @@ func (Holder) Network(metadata *model.Metadata, args map[string]any, ctx *pulumi
 
 	ctx.Export("networkName", network.Name)
 	ctx.Export("subnetName", subnet.Name)
-	tracker.AddResource("network", metadata.Meta["name"], network)
+	tracker.AddResource("network", args["name"].(string), network)
 	return nil
 }

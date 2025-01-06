@@ -32,6 +32,7 @@
                     "type": "object",
                     "description": "Network configuration for GCP",
                     "properties": {
+                        "name": { "type": "string" },
                         "cidr": {
                             "type": "string",
                             "description": "CIDR range for the subnet (e.g., '10.0.0.0/24')",
@@ -47,7 +48,7 @@
                             }
                         }
                     },
-                    "required": ["cidr", "ports"],
+                    "required": ["name", "cidr", "ports"],
                     "additionalProperties": false,
                     "examples": [{
                         "cidr": "10.0.0.0/24",
