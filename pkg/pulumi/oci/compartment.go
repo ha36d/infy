@@ -7,8 +7,13 @@ import (
 )
 
 func (Holder) Resourcegroup(metadata *model.Metadata, args map[string]any, ctx *pulumi.Context, tracker *model.ResourceTracker) error {
+	// Check if "Compartment" key exists and if create is explicitly set to false
+	if compartmentCreate, exists := args["create"]; !exists ||
+		(compartmentCreate != nil && !compartmentCreate.(bool)) {
+		ctx.Export("compartmentId", pulumi.String(metadata.Account))
+		return nil
+	}
 
-	var err error
 	compartment, err := identity.NewCompartment(ctx, metadata.Meta["name"], &identity.CompartmentArgs{
 		CompartmentId: pulumi.String(metadata.Account),
 		Description:   pulumi.String(args["description"].(string)),
